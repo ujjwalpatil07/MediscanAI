@@ -27,7 +27,6 @@ export const AuthProvider = ({ children }) => {
             try {
                 const res = await fetchCurrentUser();
                 const user = res?.data?.user || null;
-                console.log(user)
                 setLoginUser(user);
             } catch (err) {
                 // Only logout on auth-related errors
