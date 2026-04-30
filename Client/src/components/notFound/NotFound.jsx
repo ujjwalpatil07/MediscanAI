@@ -39,7 +39,6 @@ export default function NotFoundPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery] = useDebounce(searchQuery, 400);
 
-  // Memoize the filtered links to prevent unnecessary recalculations
   const displayedLinks = useMemo(() => {
     const filtered = debouncedQuery.trim()
       ? filterByQuery(quickLinks, debouncedQuery, "title")
@@ -52,20 +51,29 @@ export default function NotFoundPage() {
     return location?.pathname === path || location?.pathname.startsWith(path + "/");
   };
 
-
   return (
-    <div className="w-full">
-      <div className="max-w-5xl bg-white dark:dark:bg-neutral-800/50 rounded-xl shadow-md mx-auto border border-gray-200 dark:border-gray-700">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353] px-4">
+
+      <div className="w-full max-w-5xl">
         <div className="md:flex">
-          <div className="md:w-1/2 flex flex-col justify-center p-3 md:p-6">
+
+          {/* LEFT */}
+          <div className="md:w-1/2 flex flex-col justify-center p-4 md:p-6">
             <Logo />
 
-            <h1 className="text-6xl font-bold text-green-600 dark:text-green-400 mt-6 mb-2">404</h1>
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-100 mb-3">Page Not Found</h2>
+            <h1 className="text-6xl font-bold text-green-600 dark:text-green-400 mt-6 mb-2">
+              404
+            </h1>
+
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-100 mb-3">
+              Page Not Found
+            </h2>
+
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               The page you're looking for does not exist. Please use the options below to continue.
             </p>
 
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 mb-6">
               <button
                 onClick={() => navigate("/")}
@@ -73,6 +81,7 @@ export default function NotFoundPage() {
               >
                 <FaHome className="mr-2" /> Home
               </button>
+
               <button
                 onClick={() => navigate("/doctors")}
                 className="px-4 py-2 border border-green-600 text-green-700 font-medium rounded-lg bg-white dark:bg-neutral-900 flex items-center justify-center hover:bg-green-50 dark:hover:bg-neutral-800 transition"
@@ -81,6 +90,7 @@ export default function NotFoundPage() {
               </button>
             </div>
 
+            {/* Search */}
             <div className="mb-2 font-medium text-green-700 dark:text-green-300 flex items-center">
               <FaSearch className="mr-2" /> Quick Search
             </div>
@@ -93,7 +103,9 @@ export default function NotFoundPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+
               <FaSearch className="absolute left-3 top-3 text-gray-400" />
+
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
@@ -104,6 +116,7 @@ export default function NotFoundPage() {
               )}
             </div>
 
+            {/* Links */}
             <div className="flex flex-wrap gap-2">
               {displayedLinks.length > 0 ? (
                 displayedLinks.map((item) => (
@@ -127,13 +140,15 @@ export default function NotFoundPage() {
             </div>
           </div>
 
+          {/* RIGHT IMAGE */}
           <div className="md:w-1/2 hidden md:flex items-center justify-center p-6">
             <img
               src={doctorPatientImage}
               alt="Doctor helping patient"
-              className="w-full max-w-xs h-auto object-contain"
+              className="w-full max-w-xs object-contain"
             />
           </div>
+
         </div>
       </div>
     </div>

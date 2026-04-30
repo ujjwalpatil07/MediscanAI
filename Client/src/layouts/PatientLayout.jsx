@@ -20,7 +20,7 @@ export default function PatientLayout({ children }) {
             className="h-screen scroll-smooth flex flex-col overflow-y-auto overflow-x-hidden bg-white dark:bg-neutral-900 transition-colors duration-300"
         >
             <PatientNavbar />
-            <main className="flex-1 max-w-7xl mx-auto px-3 py-4 sm:px-6 md:py-8">
+            <main className="flex-1">
                 {children}
             </main>
             <Footer />

@@ -14,6 +14,7 @@ export const PatientProvider = ({ children }) => {
             email: "gaykenitin975@gmail.com",
             address: "xyz"
         }
+        // null    
     );
 
     const patientLogout = () => {
