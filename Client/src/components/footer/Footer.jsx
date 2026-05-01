@@ -47,7 +47,7 @@ export default function Footer() {
             Our Services
           </h2>
           <ul className="space-y-2">
-            <li><Link to="/appointments" className="hover:text-green-500 dark:hover:text-green-400">Book Appointment</Link></li>
+            <li><Link to="/doctors" className="hover:text-green-500 dark:hover:text-green-400">Book Appointment</Link></li>
             <li><Link to="/doctors" className="hover:text-green-500 dark:hover:text-green-400">Find Doctors</Link></li>
             <li><Link to="/reports" className="hover:text-green-500 dark:hover:text-green-400">Medical Reports</Link></li>
             <li><Link to="/emergency" className="hover:text-green-500 dark:hover:text-green-400">Emergency Care</Link></li>

@@ -12,15 +12,16 @@ import {
 } from "@mui/material";
 import {
   Home,
-  Heart,
   Calendar,
-  FileText,
   MessageCircle,
   LogOut,
   SunMoon,
   Settings,
   X,
   Menu as MenuIcon,
+  User,
+  Stethoscope,
+  Brain,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -31,99 +32,112 @@ import CustomDrawer from "../common/CustomDrawer";
 import { useThemeContext } from "../../context/ThemeContext";
 import { usePatientContext } from "../../context/PatientContext";
 
+const publicLinks = [
+  { title: "Home", path: "/", icon: <Home size={18} /> },
+  { title: "Doctors", path: "/doctors", icon: <Stethoscope size={18} /> },
+];
+
 const patientLinks = [
   { title: "Home", path: "/home", icon: <Home size={18} /> },
-  { title: "Symptom Checker", path: "/symptom-checker", icon: <Heart size={18} /> },
-  { title: "Appointments", path: "/appointments", icon: <Calendar size={18} /> },
-  { title: "Prescriptions", path: "/prescriptions", icon: <FileText size={18} /> },
+  { title: "Doctors", path: "/doctors", icon: <Stethoscope size={18} /> },
+  { title: "Appointments", path: "/p/appointments", icon: <Calendar size={18} /> },
+  { title: "AI Check", path: "/symptom-checker", icon: <Brain size={18} /> },
   { title: "Messages", path: "/messages", icon: <MessageCircle size={18} /> },
 ];
 
-export default function PatientNavbar() {
+export default function Navbar() {
   const location = useLocation();
   const { toggleTheme } = useThemeContext();
   const { loginPatient } = usePatientContext();
 
   const [anchorEl, setAnchorEl] = useState(null);
-  const menuOpen = Boolean(anchorEl);
-
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const links = loginPatient ? patientLinks : publicLinks;
+
+  const isActive = (path) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
     <>
-      <nav
-        className="sticky top-0 left-0 z-50 bg-white/70
-        dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353]
-        backdrop-blur-sm shadow-md px-6 py-3"
-      >
+      <nav className="sticky top-0 z-50 bg-white/70 dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353] backdrop-blur-sm shadow-md px-6 py-3">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
+
           <Logo />
 
-          {/* Desktop Menu Links */}
+          {/* Desktop Links */}
           <ul className="hidden md:flex items-center space-x-2 text-gray-700 dark:text-gray-200 font-medium">
-            {patientLinks?.map((link) => (
-              <li key={link?.title}>
+            {links.map((link) => (
+              <li key={link.title}>
                 <Link
-                  to={link?.path ?? "/"}
-                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all duration-300
-                    ${(location.pathname === link?.path || location.pathname.startsWith(link?.path + "/"))
+                  to={link.path}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
+                    ${isActive(link.path)
                       ? "bg-green-500 text-white shadow-md"
                       : "hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
                     }`}
                 >
-                  <span className="md:hidden lg:flex">{link?.icon}</span>
-                  <span>{link?.title}</span>
+                  {link.icon}
+                  {link.title}
                 </Link>
               </li>
             ))}
           </ul>
 
-          <div className="flex items-center space-x-2">
+          {/* Right Section */}
+          <div className="flex items-center gap-2">
+
             {loginPatient ? (
               <button
                 onClick={(e) => setAnchorEl(e.currentTarget)}
-                className="hidden md:flex items-center space-x-3"
+                className="hidden md:flex items-center gap-3"
               >
-                <span className="text-gray-600 dark:text-blue-50 text-sm font-semibold">
+                <span className="text-gray-600 dark:text-white text-sm font-semibold">
                   Hi, {loginPatient.firstName}
                 </span>
                 <Avatar
-                  alt={loginPatient?.firstName || "MediClam"}
                   src={loginPatient?.image}
-                  className="cursor-pointer ring-2 ring-green-400"
                   sx={{ width: 40, height: 40 }}
+                  className="ring-2 ring-green-400"
                 />
               </button>
             ) : (
-              <div className="hidden md:flex">
+              <div className="hidden md:flex gap-2">
                 <Button
                   component={Link}
                   to="/login"
                   variant="outlined"
-                  size=""
                   className="!border-green-500 !text-green-500"
                 >
                   Login
                 </Button>
+                <Button
+                  component={Link}
+                  to="/register"
+                  variant="contained"
+                  className="!bg-green-600 hover:!bg-green-700"
+                >
+                  Sign Up
+                </Button>
               </div>
             )}
 
+            {/* Mobile */}
             <IconButton
               onClick={() => setDrawerOpen(true)}
-              className="md:!hidden !text-gray-700 dark:!text-gray-200"
+              className="md:!hidden"
             >
               <MenuIcon />
             </IconButton>
           </div>
 
+          {/* Profile Menu */}
           {loginPatient && (
             <CustomMenu
               anchorEl={anchorEl}
-              open={menuOpen}
+              open={Boolean(anchorEl)}
               onClose={() => setAnchorEl(null)}
-              menuId="profile-menu"
-              buttonId="profile-button"
-              className={"!mt-4 hidden md:block"}
+              className="!mt-4 hidden md:block"
             >
               <ProfileMenuItems
                 onClose={() => setAnchorEl(null)}
@@ -134,68 +148,59 @@ export default function PatientNavbar() {
         </div>
       </nav>
 
-      {/* Drawer for mobile */}
+      {/* Drawer */}
       <CustomDrawer
         anchor="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        className={"md:hidden"}
+        className="md:hidden"
       >
-        <div className="p-4 flex justify-between border-b border-gray-200 dark:border-gray-700">
+        <div className="p-4 flex justify-between border-b">
           <Logo />
-
-          <IconButton
-            onClick={() => setDrawerOpen(false)}
-            className="!text-gray-700 dark:!text-gray-200"
-          >
+          <IconButton onClick={() => setDrawerOpen(false)}>
             <X />
           </IconButton>
         </div>
 
         <List>
-          {patientLinks.map((link) => (
+          {links.map((link) => (
             <ListItem key={link.title} disablePadding>
               <ListItemButton
                 component={Link}
                 to={link.path}
                 onClick={() => setDrawerOpen(false)}
-                selected={location.pathname === link.path}
-                sx={{
-                  "&.Mui-selected": {
-                    backgroundColor: "rgba(34,197,94,0.15)",
-                    color: "#22c55e",
-                  },
-                  "&.Mui-selected:hover": {
-                    backgroundColor: "rgba(34,197,94,0.25)",
-                  },
-                }}
+                selected={isActive(link.path)}
               >
-                <ListItemIcon className="!text-gray-700 dark:!text-gray-200 !min-w-8">
-                  {link.icon}
-                </ListItemIcon>
+                <ListItemIcon>{link.icon}</ListItemIcon>
                 <ListItemText primary={link.title} />
               </ListItemButton>
             </ListItem>
           ))}
         </List>
 
-        <div className="mt-auto py-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-auto p-4 border-t">
           {loginPatient ? (
             <ProfileMenuItems
               onClose={() => setDrawerOpen(false)}
               toggleTheme={toggleTheme}
             />
           ) : (
-            <div className="flex flex-col px-4">
+            <div className="flex flex-col gap-2">
               <Button
                 component={Link}
                 to="/login"
                 variant="outlined"
-                size="medium"
-                className="!border-green-500 !text-green-500"
                 onClick={() => setDrawerOpen(false)}
               >
                 Login
+              </Button>
+              <Button
+                component={Link}
+                to="/register"
+                variant="contained"
+                onClick={() => setDrawerOpen(false)}
+              >
+                Sign Up
               </Button>
             </div>
           )}
@@ -206,18 +211,13 @@ export default function PatientNavbar() {
 }
 
 function ProfileMenuItems({ onClose, toggleTheme }) {
-  const { loginPatient, patientLogout } = usePatientContext();
+  const { patientLogout } = usePatientContext();
 
   return (
     <>
-      <MenuItem className="!py-2" component={Link} to="/profile" onClick={onClose}>
+      <MenuItem component={Link} to="/profile" onClick={onClose}>
         <ListItemIcon>
-          <Avatar
-            alt={loginPatient?.firstName || "MediClam"}
-            src={loginPatient?.image}
-            className="cursor-pointer ring-2 ring-green-400"
-            sx={{ width: 20, height: 20 }}
-          />
+          <User size={18} />
         </ListItemIcon>
         <ListItemText primary="My Profile" />
       </MenuItem>
@@ -225,28 +225,26 @@ function ProfileMenuItems({ onClose, toggleTheme }) {
       <MenuItem
         onClick={() => {
           toggleTheme();
-          onClose?.();
+          onClose();
         }}
-        className="!py-2"
       >
         <ListItemIcon>
-          <SunMoon size={18} className="dark:text-white" />
+          <SunMoon size={18} />
         </ListItemIcon>
         <ListItemText primary="Toggle Theme" />
       </MenuItem>
 
-      <MenuItem className="!py-2" component={Link} to="/settings" onClick={onClose}>
+      <MenuItem component={Link} to="/settings" onClick={onClose}>
         <ListItemIcon>
-          <Settings size={18} className="dark:text-white" />
+          <Settings size={18} />
         </ListItemIcon>
         <ListItemText primary="Settings" />
       </MenuItem>
 
       <MenuItem
-        className="!py-2"
         onClick={() => {
           patientLogout();
-          onClose?.();
+          onClose();
         }}
       >
         <ListItemIcon>

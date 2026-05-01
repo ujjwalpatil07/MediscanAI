@@ -1,0 +1,1 @@
+run the project using the ->> uvicorn app.main:app --reload 

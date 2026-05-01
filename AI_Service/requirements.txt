@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+google-generativeai
+pydantic
+python-dotenv
+openai>=1.0.0
+opencv-python
+numpy
+Pillow
+scikit-learn
+torch
+torchvision
+python-multipart
