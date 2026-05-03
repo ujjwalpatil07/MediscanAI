@@ -1,3 +1,5 @@
+// Loader.jsx - Updated with green theme
+
 import PropTypes from "prop-types";
 import { Loader2 } from "lucide-react";
 

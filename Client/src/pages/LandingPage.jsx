@@ -43,7 +43,7 @@ export default function LandingPage() {
       description: "Select best time for you.",
       icon: Calendar,
       color: "bg-green-500",
-      link: "/appointments"
+      link: "/doctors"
     },
     {
       title: "Find the Best Doctor",
@@ -331,7 +331,7 @@ export default function LandingPage() {
           <div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Why Choose Smile For All Your Dental Treatments?</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">We use only the best quality materials on the market in order to provide the best products to our patients. So don't worry about anything and book yourself.</p>
-            <Link to="/appointments" className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+            <Link to="/doctors" className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
               Book an appointment <Calendar className="w-4 h-4" />
             </Link>
           </div>
