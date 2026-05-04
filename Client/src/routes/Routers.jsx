@@ -1,15 +1,7 @@
 import React, { useContext } from "react";
-<<<<<<< HEAD
 import { Navigate, Route, Routes } from "react-router-dom";
-import NotFound from "../components/notFound/NotFound";
-=======
-import { Route, Routes } from "react-router-dom";
-
->>>>>>> 092e5f4a7f752d970bace39a42518c0f0f8c3aa4
 import PatientLayout from "../layouts/PatientLayout";
-
 import AuthContext from "../context/AuthContext";
-
 import NotFound from "../components/notFound/NotFound";
 import PageLoader from "../components/common/PageLoader";
 
