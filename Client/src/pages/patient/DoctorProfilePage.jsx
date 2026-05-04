@@ -56,7 +56,7 @@ export default function DoctorProfilePage() {
     }
 
     const handleBookAppointment = () => {
-        navigate("/appointment", { state: { id } });
+        navigate(`/p/book-appointment/${id}`);
     };
 
     const handleChat = () => {

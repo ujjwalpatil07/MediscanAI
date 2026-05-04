@@ -16,12 +16,14 @@ import {
   MessageCircle,
   LogOut,
   SunMoon,
-  Settings,
   X,
   Menu as MenuIcon,
   User,
   Stethoscope,
   Brain,
+  LayoutDashboard,
+  FileText,
+  Folder
 } from "lucide-react";
 
 import { useState } from "react";
@@ -40,9 +42,12 @@ const publicLinks = [
 const patientLinks = [
   { title: "Home", path: "/home", icon: <Home size={18} /> },
   { title: "Doctors", path: "/doctors", icon: <Stethoscope size={18} /> },
-  { title: "Appointments", path: "/p/appointments", icon: <Calendar size={18} /> },
-  { title: "AI Check", path: "/symptom-checker", icon: <Brain size={18} /> },
-  { title: "Messages", path: "/messages", icon: <MessageCircle size={18} /> },
+  { title: "Appointments", path: "/p/my-appointments", icon: <Calendar size={18} /> },
+  { title: "AI Check", path: "/p/symptom-checker", icon: <Brain size={18} /> },
+  { title: "Medical Records", path: "/p/medical-records", icon: <Folder size={18} /> },
+  { title: "Prescriptions", path: "/p/prescriptions", icon: <FileText size={18} /> },
+
+  // { title: "Messages", path: "/messages", icon: <MessageCircle size={18} /> },
 ];
 
 export default function Navbar() {
@@ -71,7 +76,7 @@ export default function Navbar() {
               <li key={link.title}>
                 <Link
                   to={link.path}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md transition-all
                     ${isActive(link.path)
                       ? "bg-green-500 text-white shadow-md"
                       : "hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
@@ -215,11 +220,18 @@ function ProfileMenuItems({ onClose, toggleTheme }) {
 
   return (
     <>
-      <MenuItem component={Link} to="/profile" onClick={onClose}>
+      <MenuItem component={Link} to="/p/profile" onClick={onClose}>
         <ListItemIcon>
-          <User size={18} />
+          <User size={18} className="dark:text-white" />
         </ListItemIcon>
         <ListItemText primary="My Profile" />
+      </MenuItem>
+
+      <MenuItem component={Link} to="/p/dashboard" onClick={onClose}>
+        <ListItemIcon>
+          <LayoutDashboard size={18} className="dark:text-white" />
+        </ListItemIcon>
+        <ListItemText primary="My Dashboard" />
       </MenuItem>
 
       <MenuItem
@@ -229,16 +241,9 @@ function ProfileMenuItems({ onClose, toggleTheme }) {
         }}
       >
         <ListItemIcon>
-          <SunMoon size={18} />
+          <SunMoon size={18} className="dark:text-white" />
         </ListItemIcon>
         <ListItemText primary="Toggle Theme" />
-      </MenuItem>
-
-      <MenuItem component={Link} to="/settings" onClick={onClose}>
-        <ListItemIcon>
-          <Settings size={18} />
-        </ListItemIcon>
-        <ListItemText primary="Settings" />
       </MenuItem>
 
       <MenuItem

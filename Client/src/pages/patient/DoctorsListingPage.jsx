@@ -244,8 +244,7 @@ export default function DoctorsListingPage() {
                                             View Profile
                                         </Link>
                                         <Link
-                                            to="/appointment"
-                                            state={{ doctor }}
+                                            to={`/p/book-appointment/${doctor.id}`}
                                             className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-1"
                                         >
                                             Book <ChevronRight className="w-3 h-3" />
