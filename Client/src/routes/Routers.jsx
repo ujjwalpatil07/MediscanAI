@@ -1,19 +1,34 @@
 import React, { useContext } from "react";
+<<<<<<< HEAD
 import { Navigate, Route, Routes } from "react-router-dom";
 import NotFound from "../components/notFound/NotFound";
+=======
+import { Route, Routes } from "react-router-dom";
+
+>>>>>>> 092e5f4a7f752d970bace39a42518c0f0f8c3aa4
 import PatientLayout from "../layouts/PatientLayout";
+
+import AuthContext from "../context/AuthContext";
+
+import NotFound from "../components/notFound/NotFound";
+import PageLoader from "../components/common/PageLoader";
+
 import RoleSelector from "../pages/login/RoleSelector"
 import Login from "../pages/login/Login";
 import PatientSignup from "../pages/signup/patient/PatientSignup";
-import LandingPage from "../pages/LandingPage";
 import DoctorSignup from "../pages/signup/doctor/DoctorSignup";
-import AuthContext from "../context/AuthContext";
-import PageLoader from "../components/common/PageLoader";
+
+import LandingPage from "../pages/LandingPage";
 import HomePage from "../pages/HomePage";
 import DoctorsListingPage from "../pages/patient/DoctorsListingPage";
 import DoctorProfilePage from "../pages/patient/DoctorProfilePage";
 import BookAppointmentPage from "../pages/patient/BookAppointmentPage";
-import PatientAppointments from "../pages/patient/PatientAppoinments";
+import MyAppointmentsPage from "../pages/patient/MyAppointments";
+import PatientDashboard from "../pages/patient/PatientDashboard";
+import PatientProfile from "../pages/patient/ProfilePage";
+import SymptomChecker from "../pages/patient/SymptomChecker";
+import PrescriptionsPage from "../pages/patient/PrescriptionsPage";
+import MedicalRecordsPage from "../pages/patient/MedicalRecordsPage";
 
 import DoctorDashboard from "../pages/doctor/Dashboard";
 import DoctorAppointments from "../pages/doctor/Appointments";
@@ -34,6 +49,7 @@ export default function Routers() {
   if (authLoading) {
     return <PageLoader text="Preparing your health dashboard..." />;
   }
+
   return (
     <Routes>
       <Route path="/" element={<PatientLayout><LandingPage /></PatientLayout>} />
@@ -48,8 +64,15 @@ export default function Routers() {
 
       <Route path="/doctors" element={<PatientLayout><DoctorsListingPage /></PatientLayout>} />
       <Route path="/doctor/:id" element={<PatientLayout><DoctorProfilePage /></PatientLayout>} />
-      <Route path="/appointment" element={<PatientLayout><BookAppointmentPage /></PatientLayout>} />
-      <Route path="/p/appointments" element={<PatientLayout><PatientAppointments /></PatientLayout>} />
+
+      <Route path="/p/dashboard" element={<PatientLayout><PatientDashboard /></PatientLayout>} />
+      <Route path="/p/book-appointment/:doctor_id" element={<PatientLayout><BookAppointmentPage /></PatientLayout>} />
+      <Route path="/p/my-appointments" element={<PatientLayout><MyAppointmentsPage /></PatientLayout>} />
+      <Route path="/p/symptom-checker" element={<PatientLayout><SymptomChecker/></PatientLayout>} />
+      <Route path="/p/prescriptions" element={<PatientLayout><PrescriptionsPage/></PatientLayout>} />
+      <Route path="/p/medical-records" element={<PatientLayout><MedicalRecordsPage/></PatientLayout>} />
+ 
+      <Route path="/p/profile" element={<PatientLayout><PatientProfile/></PatientLayout>} />
 
       <Route path="*" element={<NotFound />} />
 
