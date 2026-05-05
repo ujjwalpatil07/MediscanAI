@@ -6,6 +6,8 @@ import http from "node:http";
 import { initSocket } from "./sockets/index.js";
 
 import authRoutes from '../Server/routes/authRoutes.js'
+import uploadRoutes from "./routes/upload.routes.js";
+
 
 import { connectDB } from "./config/initDB.js";
 import { corsOptions } from "./config/cors.js";
@@ -18,6 +20,8 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
+app.use(compression());
+connectDB();
 
 const server = http.createServer(app);
 const io = initSocket(server);
@@ -28,6 +32,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/upload", uploadRoutes);
 
 app.get("*", (req, res) => {
   res

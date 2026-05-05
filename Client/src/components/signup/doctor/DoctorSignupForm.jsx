@@ -1,9 +1,10 @@
-import { useContext, useState } from "react";
+import { useState, useCallback, useContext } from "react";
 import PropTypes from "prop-types";
 import { FaEye, FaEyeSlash, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import BackButton from "../../common/BackButton";
+import ButtonLoader from "../../common/ButtonLoader";
 import { doctorSignup } from "../../../services/auth.service";
 import AuthContext from "../../../context/AuthContext";
 
@@ -12,206 +13,212 @@ const inputClass =
   "text-gray-900 dark:text-gray-100 border border-[#CBD5E0] " +
   "focus:outline-none focus:ring-2 focus:ring-green-600";
 
+const errorInputClass =
+  "w-full px-4 py-2 rounded-lg bg-[#F7FAFC] dark:bg-neutral-800 " +
+  "text-gray-900 dark:text-gray-100 border border-red-500 " +
+  "focus:outline-none focus:ring-2 focus:ring-red-500";
+
 const checkboxClass =
   "w-4 h-4 text-green-600 rounded focus:ring-green-500 " +
   "border-gray-300 dark:border-neutral-600";
 
 const buttonPrimaryClass =
-  "bg-[#1A8151] hover:bg-[#13623d] text-white py-2 rounded-lg " +
-  "font-medium transition disabled:opacity-60";
+  "bg-[#1A8151] hover:bg-[#13623d] text-white py-2.5 rounded-lg " +
+  "font-medium transition disabled:opacity-60 flex items-center justify-center gap-2";
 
 const buttonSecondaryClass =
   "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 " +
   "dark:hover:bg-neutral-600 text-gray-800 dark:text-gray-200 " +
-  "py-2 rounded-lg font-medium transition";
+  "py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2";
 
-const daysOfWeek = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
+const TOTAL_STEPS = 3;
+
+const STEP_TITLES = [
+  "Account Setup",
+  "Personal Information",
+  "Professional Details",
 ];
+
+const VALIDATION_RULES = {
+  email: {
+    required: true,
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    message: "Please enter a valid email address",
+  },
+  password: {
+    required: true,
+    minLength: 6,
+    message: "Password must be at least 6 characters",
+  },
+  confirmPassword: {
+    required: true,
+    matchField: "password",
+    message: "Passwords do not match",
+  },
+  firstName: {
+    required: true,
+    minLength: 2,
+    message: "First name must be at least 2 characters",
+  },
+  lastName: {
+    required: true,
+    minLength: 2,
+    message: "Last name must be at least 2 characters",
+  },
+  phone: {
+    pattern: /^\+?[\d\s-]{10,15}$/,
+    message: "Please enter a valid phone number",
+  },
+  specialty: {
+    required: true,
+    message: "Please select your specialty",
+  },
+  licenseNumber: {
+    required: true,
+    minLength: 5,
+    message: "Please enter a valid license number",
+  },
+  yearsOfExperience: {
+    required: true,
+    min: 0,
+    max: 50,
+    message: "Please enter valid years of experience (0-50)",
+  },
+  medicalDegree: {
+    required: true,
+    message: "Please select your medical degree",
+  },
+  consultationFee: {
+    required: true,
+    min: 0,
+    message: "Please enter a valid consultation fee",
+  },
+};
+
+const INITIAL_FORM_DATA = {
+  email: "",
+  password: "",
+  confirmPassword: "",
+  firstName: "",
+  lastName: "",
+  phone: "",
+  gender: "",
+  dob: "",
+  specialty: "",
+  licenseNumber: "",
+  yearsOfExperience: "",
+  medicalDegree: "",
+  consultationFee: "",
+};
 
 export default function DoctorSignupForm() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { setLoginUser } = useContext(AuthContext);
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [agreeChecked, setAgreeChecked] = useState(false);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    phone: "",
-    gender: "",
-    dob: "",
-    specialty: "",
-    licenseNumber: "",
-    yearsOfExperience: "",
-    medicalDegree: "",
-    availableDays: [],
-    startTime: "",
-    endTime: "",
-    consultationFee: "",
-    clinicStreet: "",
-    clinicCity: "",
-    clinicState: "",
-    clinicPincode: "",
-    degreeCertificate: null,
-    idProof: null,
+  const [step, setStep] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("doctorSignupStep");
+      return saved ? parseInt(saved, 10) : 1;
+    } catch {
+      return 1;
+    }
+  });
+
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("doctorSignupData");
+      return saved ? JSON.parse(saved) : INITIAL_FORM_DATA;
+    } catch {
+      return INITIAL_FORM_DATA;
+    }
   });
 
   const [formErrors, setFormErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [agreeChecked, setAgreeChecked] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const saveToSession = useCallback((data, currentStep) => {
+    try {
+      sessionStorage.setItem("doctorSignupData", JSON.stringify(data));
+      sessionStorage.setItem("doctorSignupStep", currentStep.toString());
+    } catch {
+      // Session storage might be full
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      saveToSession(updated, step);
+      return updated;
+    });
     setError("");
-    setFormErrors((prev) => ({
-      ...prev,
-      [name]: "",
-    }));
-  };
-
-  const handleDayToggle = (day) => {
-    setFormData((prev) => ({
-      ...prev,
-      availableDays: prev.availableDays.includes(day)
-        ? prev.availableDays.filter((d) => d !== day)
-        : [...prev.availableDays, day],
-    }));
-  };
-
-  const handleFileChange = (e) => {
-    const { name, files } = e.target;
-    if (files[0]) {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: files[0],
-      }));
-    }
+    setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateField = (name, value) => {
-    switch (name) {
-      case "email":
-        if (!value.trim()) return "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-          return "Please enter a valid email";
-        return "";
-      case "username":
-        if (!value.trim()) return "Username is required";
-        if (value.trim().length < 3)
-          return "Username must be at least 3 characters";
-        return "";
-      case "password":
-        if (!value) return "Password is required";
-        if (value.length < 6) return "Password must be at least 6 characters";
-        return "";
-      case "confirmPassword":
-        if (!value) return "Please confirm your password";
-        if (value !== formData.password) return "Passwords do not match";
-        return "";
-      case "firstName":
-        if (!value.trim()) return "First name is required";
-        return "";
-      case "lastName":
-        if (!value.trim()) return "Last name is required";
-        return "";
-      case "phone":
-        if (value && !/^\+?[\d\s-]{10,}$/.test(value))
-          return "Please enter a valid phone number";
-        return "";
-      case "specialty":
-        if (!value) return "Please select a specialty";
-        return "";
-      case "licenseNumber":
-        if (!value.trim()) return "License number is required";
-        return "";
-      case "yearsOfExperience":
-        if (!value) return "Years of experience is required";
-        if (Number(value) < 0) return "Experience cannot be negative";
-        return "";
-      case "medicalDegree":
-        if (!value) return "Please select a medical degree";
-        return "";
-      case "startTime":
-        if (!value) return "Start time is required";
-        return "";
-      case "endTime":
-        if (!value) return "End time is required";
-        return "";
-      case "consultationFee":
-        if (!value) return "Consultation fee is required";
-        if (Number(value) < 0) return "Fee cannot be negative";
-        return "";
-      default:
-        return "";
+    const rules = VALIDATION_RULES[name];
+    if (!rules) return "";
+
+    if (rules.required && (!value || (typeof value === "string" && !value.trim()))) {
+      return rules.message || `${name} is required`;
     }
+
+    if (rules.pattern && value && !rules.pattern.test(value)) {
+      return rules.message;
+    }
+
+    if (rules.minLength && value && value.trim().length < rules.minLength) {
+      return rules.message;
+    }
+
+    if (rules.matchField && value !== formData[rules.matchField]) {
+      return rules.message;
+    }
+
+    if (rules.min !== undefined && value && Number(value) < rules.min) {
+      return rules.message;
+    }
+
+    if (rules.max !== undefined && value && Number(value) > rules.max) {
+      return rules.message;
+    }
+
+    return "";
   };
 
   const validateStep = (stepNumber) => {
     const errors = {};
     let isValid = true;
 
-    const step1Fields = [
-      "email",
-      "username",
-      "password",
-      "confirmPassword",
-    ];
-    const step2Fields = ["firstName", "lastName"];
-    const step3Fields = [
-      "specialty",
-      "licenseNumber",
-      "yearsOfExperience",
-      "medicalDegree",
-    ];
-    const step4Fields = ["startTime", "endTime", "consultationFee"];
+    const stepFields = {
+      1: ["email", "password", "confirmPassword"],
+      2: ["firstName", "lastName", "phone"],
+      3: ["specialty", "licenseNumber", "yearsOfExperience", "medicalDegree", "consultationFee"],
+    };
 
-    let fieldsToValidate = [];
-    switch (stepNumber) {
-      case 1:
-        fieldsToValidate = step1Fields;
-        break;
-      case 2:
-        fieldsToValidate = step2Fields;
-        break;
-      case 3:
-        fieldsToValidate = step3Fields;
-        break;
-      case 4:
-        fieldsToValidate = step4Fields;
-        break;
-    }
+    const fieldsToValidate = stepFields[stepNumber] || [];
 
     fieldsToValidate.forEach((field) => {
-      const error = validateField(field, formData[field]);
-      if (error) {
-        errors[field] = error;
+      const errorMsg = validateField(field, formData[field]);
+      if (errorMsg) {
+        errors[field] = errorMsg;
         isValid = false;
       }
     });
 
-    if (stepNumber === 4 && formData.availableDays.length === 0) {
-      errors.availableDays = "Please select at least one available day";
+    if (stepNumber === 1 && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
       isValid = false;
     }
 
     if (!agreeChecked) {
-      setError("Please agree to continue");
+      setError("Please agree to terms and conditions to continue");
       isValid = false;
     }
 
@@ -222,50 +229,42 @@ export default function DoctorSignupForm() {
   const handleNext = () => {
     setError("");
     if (validateStep(step)) {
+      const nextStep = step + 1;
+      setStep(nextStep);
       setAgreeChecked(false);
-      setStep((prev) => prev + 1);
+      saveToSession(formData, nextStep);
     }
   };
 
   const handleBack = () => {
     setError("");
     setFormErrors({});
-    setStep((prev) => prev - 1);
+    const prevStep = step - 1;
+    setStep(prevStep);
+    saveToSession(formData, prevStep);
   };
 
   const formatSignupData = () => {
     return {
-      email: formData.email,
-      username: formData.username,
+      email: formData.email.trim(),
       password: formData.password,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      phone: formData.phone || undefined,
-      dob: formData.dob || undefined,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      phone: formData.phone.trim() || undefined,
       gender: formData.gender || undefined,
+      dob: formData.dob || undefined,
       specialty: formData.specialty,
-      licenseNumber: formData.licenseNumber,
+      licenseNumber: formData.licenseNumber.trim(),
       yearsOfExperience: Number(formData.yearsOfExperience),
       medicalDegree: formData.medicalDegree,
-      availableDays: formData.availableDays,
-      availableTimeSlots: {
-        start: formData.startTime,
-        end: formData.endTime,
-      },
       consultationFee: Number(formData.consultationFee),
-      clinicAddress: {
-        street: formData.clinicStreet || undefined,
-        city: formData.clinicCity || undefined,
-        state: formData.clinicState || undefined,
-        pincode: formData.clinicPincode || undefined,
-      },
     };
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
 
-    if (!validateStep(4)) return;
+    if (!validateStep(3)) return;
 
     setLoading(true);
     setError("");
@@ -278,11 +277,15 @@ export default function DoctorSignupForm() {
       localStorage.setItem("token", token);
       setLoginUser(user);
 
-      enqueueSnackbar("Doctor registration successful! Welcome to MediscanAI.", {
-        variant: "success",
-      });
+      sessionStorage.removeItem("doctorSignupData");
+      sessionStorage.removeItem("doctorSignupStep");
 
-      navigate("/");
+      enqueueSnackbar(
+        "Registration successful! Welcome to MediscanAI. Please complete your profile.",
+        { variant: "success" }
+      );
+
+      navigate("/d/dashboard");
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Registration failed. Please try again.";
@@ -293,16 +296,32 @@ export default function DoctorSignupForm() {
     }
   };
 
-  const stepTitles = [
-    "Create Account",
-    "Personal Information",
-    "Professional Details",
-    "Availability & Uploads",
-  ];
+  const renderStepIndicator = () => (
+    <div className="flex justify-center items-center gap-2 mb-6">
+      {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
+        <div key={s} className="flex items-center">
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${s <= step
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-gray-400"
+              }`}
+          >
+            {s < step ? "✓" : s}
+          </div>
+          {s < TOTAL_STEPS && (
+            <div
+              className={`w-12 h-0.5 mx-1 transition-all duration-300 ${s < step ? "bg-green-600" : "bg-gray-200 dark:bg-neutral-700"
+                }`}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="relative w-full md:w-1/2 h-screen flex flex-col items-center justify-center bg-white dark:bg-neutral-900 transition-colors duration-300 p-4">
-      <div className="h-full border-white mx-auto w-full max-w-2xl bg-transparent sm:py-4 lg:p-8 overflow-auto no-scrollbar">
+      <div className="h-full w-full max-w-xl bg-transparent sm:py-4 lg:p-8 overflow-auto no-scrollbar flex flex-col justify-center">
         <BackButton position="top-5 left-5" className="hidden sm:flex" />
 
         <h2 className="text-3xl font-bold text-center mb-1 dark:text-white">
@@ -310,20 +329,10 @@ export default function DoctorSignupForm() {
         </h2>
 
         <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-2">
-          Step {step} of 4: {stepTitles[step - 1]}
+          Step {step} of {TOTAL_STEPS}: {STEP_TITLES[step - 1]}
         </p>
 
-        <div className="flex justify-center items-center gap-1 mb-4">
-          {[1, 2, 3, 4].map((s) => (
-            <div
-              key={s}
-              className={`h-2 w-14 rounded-full ${s <= step
-                  ? "bg-green-600"
-                  : "bg-gray-300 dark:bg-neutral-600"
-                }`}
-            />
-          ))}
-        </div>
+        {renderStepIndicator()}
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -337,61 +346,103 @@ export default function DoctorSignupForm() {
           {step === 1 && (
             <div className="space-y-4">
               <InputField
-                label="Email"
+                label="Email Address"
                 id="email"
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="example@gmail.com"
+                placeholder="dr.name@example.com"
                 required
                 error={formErrors.email}
               />
 
-              <InputField
-                label="Username"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                placeholder="example784596"
-                required
-                error={formErrors.username}
-              />
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm mb-1 text-gray-700 dark:text-gray-300"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Create a strong password"
+                    className={formErrors.password ? errorInputClass : inputClass}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-500 dark:text-gray-400"
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+                {formErrors.password && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>
+                )}
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Minimum 6 characters
+                </p>
+              </div>
 
-              <PasswordField
-                label="Password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Create a strong password"
-                error={formErrors.password}
-              />
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm mb-1 text-gray-700 dark:text-gray-300"
+                >
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Re-enter your password"
+                    className={formErrors.confirmPassword ? errorInputClass : inputClass}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-3 text-gray-500 dark:text-gray-400"
+                  >
+                    {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+                {formErrors.confirmPassword && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {formErrors.confirmPassword}
+                  </p>
+                )}
+              </div>
 
-              <PasswordField
-                label="Confirm Password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Re-enter password"
-                error={formErrors.confirmPassword}
-              />
-
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"
                   id="agree1"
                   checked={agreeChecked}
-                  onChange={(e) => setAgreeChecked(e.target.checked)}
+                  onChange={(e) => {
+                    setAgreeChecked(e.target.checked);
+                    setError("");
+                  }}
                   className={checkboxClass}
                 />
                 <label
                   htmlFor="agree1"
-                  className="text-sm text-gray-700 dark:text-gray-300"
+                  className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
                 >
-                  Agree to terms and conditions
+                  I agree to the{" "}
+                  <span className="text-green-600 hover:underline">Terms & Conditions</span>{" "}
+                  and{" "}
+                  <span className="text-green-600 hover:underline">Privacy Policy</span>
                 </label>
               </div>
             </div>
@@ -405,7 +456,7 @@ export default function DoctorSignupForm() {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                placeholder="John"
+                placeholder="Stephen"
                 required
                 error={formErrors.firstName}
               />
@@ -415,7 +466,7 @@ export default function DoctorSignupForm() {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                placeholder="Doe"
+                placeholder="Conley"
                 required
                 error={formErrors.lastName}
               />
@@ -461,20 +512,23 @@ export default function DoctorSignupForm() {
                 onChange={handleChange}
               />
 
-              <div className="md:col-span-2 mt-2">
+              <div className="md:col-span-2 pt-2">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="agree2"
                     checked={agreeChecked}
-                    onChange={(e) => setAgreeChecked(e.target.checked)}
+                    onChange={(e) => {
+                      setAgreeChecked(e.target.checked);
+                      setError("");
+                    }}
                     className={checkboxClass}
                   />
                   <label
                     htmlFor="agree2"
-                    className="text-sm text-gray-700 dark:text-gray-300"
+                    className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
                   >
-                    Agree to continue
+                    I confirm that the above information is correct
                   </label>
                 </div>
               </div>
@@ -488,17 +542,17 @@ export default function DoctorSignupForm() {
                   htmlFor="specialty"
                   className="block text-sm mb-1 text-gray-700 dark:text-gray-300"
                 >
-                  Specialty
+                  Specialty <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="specialty"
                   name="specialty"
                   value={formData.specialty}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={formErrors.specialty ? errorInputClass : inputClass}
                   required
                 >
-                  <option value="">Select Specialty</option>
+                  <option value="">Select your specialty</option>
                   <option value="Cardiology">Cardiology</option>
                   <option value="Dermatology">Dermatology</option>
                   <option value="Neurology">Neurology</option>
@@ -509,6 +563,8 @@ export default function DoctorSignupForm() {
                   <option value="General Medicine">General Medicine</option>
                   <option value="Gynecology">Gynecology</option>
                   <option value="ENT">ENT</option>
+                  <option value="Ophthalmology">Ophthalmology</option>
+                  <option value="Dentistry">Dentistry</option>
                 </select>
                 {formErrors.specialty && (
                   <p className="text-red-500 text-xs mt-1">{formErrors.specialty}</p>
@@ -517,12 +573,12 @@ export default function DoctorSignupForm() {
 
               <div className="md:col-span-2">
                 <InputField
-                  label="License/Registration Number"
+                  label="License / Registration Number"
                   id="licenseNumber"
                   name="licenseNumber"
                   value={formData.licenseNumber}
                   onChange={handleChange}
-                  placeholder="SSBB454D4HDER787"
+                  placeholder="Enter your medical license number"
                   required
                   error={formErrors.licenseNumber}
                 />
@@ -535,7 +591,9 @@ export default function DoctorSignupForm() {
                 name="yearsOfExperience"
                 value={formData.yearsOfExperience}
                 onChange={handleChange}
-                placeholder="4"
+                placeholder="e.g., 5"
+                min="0"
+                max="50"
                 required
                 error={formErrors.yearsOfExperience}
               />
@@ -545,196 +603,64 @@ export default function DoctorSignupForm() {
                   htmlFor="medicalDegree"
                   className="block text-sm mb-1 text-gray-700 dark:text-gray-300"
                 >
-                  Medical Degree
+                  Medical Degree <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="medicalDegree"
                   name="medicalDegree"
                   value={formData.medicalDegree}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={formErrors.medicalDegree ? errorInputClass : inputClass}
                   required
                 >
-                  <option value="">Select Degree</option>
+                  <option value="">Select degree</option>
                   <option value="MBBS">MBBS</option>
                   <option value="MD">MD</option>
-                  <option value="BDS">BDS</option>
                   <option value="MS">MS</option>
+                  <option value="BDS">BDS</option>
                   <option value="DNB">DNB</option>
-                  <option value="Other">Other</option>
+                  <option value="DM">DM</option>
+                  <option value="MCh">MCh</option>
                 </select>
                 {formErrors.medicalDegree && (
                   <p className="text-red-500 text-xs mt-1">{formErrors.medicalDegree}</p>
                 )}
               </div>
 
-              <div className="md:col-span-2 mt-2">
+              <div className="md:col-span-2">
+                <InputField
+                  label="Consultation Fee (₹)"
+                  id="consultationFee"
+                  type="number"
+                  name="consultationFee"
+                  value={formData.consultationFee}
+                  onChange={handleChange}
+                  placeholder="e.g., 500"
+                  min="0"
+                  required
+                  error={formErrors.consultationFee}
+                />
+              </div>
+
+              <div className="md:col-span-2 pt-2">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="agree3"
                     checked={agreeChecked}
-                    onChange={(e) => setAgreeChecked(e.target.checked)}
+                    onChange={(e) => {
+                      setAgreeChecked(e.target.checked);
+                      setError("");
+                    }}
                     className={checkboxClass}
                   />
                   <label
                     htmlFor="agree3"
-                    className="text-sm text-gray-700 dark:text-gray-300"
+                    className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
                   >
-                    Agree to continue
+                    I confirm that my professional details are accurate and I am licensed to practice
                   </label>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
-                  Available Days
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {daysOfWeek.map((day) => (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() => handleDayToggle(day)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition ${formData.availableDays.includes(day)
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-200 dark:bg-neutral-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-neutral-600"
-                        }`}
-                    >
-                      {day.slice(0, 3)}
-                    </button>
-                  ))}
-                </div>
-                {formErrors.availableDays && (
-                  <p className="text-red-500 text-xs mt-1">{formErrors.availableDays}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <InputField
-                  label="Start Time"
-                  id="startTime"
-                  type="time"
-                  name="startTime"
-                  value={formData.startTime}
-                  onChange={handleChange}
-                  required
-                  error={formErrors.startTime}
-                />
-                <InputField
-                  label="End Time"
-                  id="endTime"
-                  type="time"
-                  name="endTime"
-                  value={formData.endTime}
-                  onChange={handleChange}
-                  required
-                  error={formErrors.endTime}
-                />
-              </div>
-
-              <InputField
-                label="Consultation Fee (₹)"
-                id="consultationFee"
-                type="number"
-                name="consultationFee"
-                value={formData.consultationFee}
-                onChange={handleChange}
-                placeholder="500"
-                required
-                error={formErrors.consultationFee}
-              />
-
-              <div>
-                <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
-                  Clinic Address
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <InputField
-                    label="Street"
-                    id="clinicStreet"
-                    name="clinicStreet"
-                    value={formData.clinicStreet}
-                    onChange={handleChange}
-                    placeholder="1st Floor, Lotus Medical Complex"
-                  />
-                  <InputField
-                    label="City"
-                    id="clinicCity"
-                    name="clinicCity"
-                    value={formData.clinicCity}
-                    onChange={handleChange}
-                    placeholder="Mumbai"
-                  />
-                  <InputField
-                    label="State"
-                    id="clinicState"
-                    name="clinicState"
-                    value={formData.clinicState}
-                    onChange={handleChange}
-                    placeholder="Maharashtra"
-                  />
-                  <InputField
-                    label="Pincode"
-                    id="clinicPincode"
-                    name="clinicPincode"
-                    value={formData.clinicPincode}
-                    onChange={handleChange}
-                    placeholder="400053"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
-                  Upload Documents
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs mb-1 text-gray-500 dark:text-gray-400">
-                      Degree Certificate (Optional)
-                    </label>
-                    <input
-                      type="file"
-                      name="degreeCertificate"
-                      onChange={handleFileChange}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="w-full text-sm text-gray-700 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100 dark:file:bg-neutral-700 dark:file:text-green-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs mb-1 text-gray-500 dark:text-gray-400">
-                      ID Proof (Optional)
-                    </label>
-                    <input
-                      type="file"
-                      name="idProof"
-                      onChange={handleFileChange}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="w-full text-sm text-gray-700 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100 dark:file:bg-neutral-700 dark:file:text-green-400"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="agree4"
-                  checked={agreeChecked}
-                  onChange={(e) => setAgreeChecked(e.target.checked)}
-                  className={checkboxClass}
-                />
-                <label
-                  htmlFor="agree4"
-                  className="text-sm text-gray-700 dark:text-gray-300"
-                >
-                  Agree to terms and conditions
-                </label>
               </div>
             </div>
           )}
@@ -744,20 +670,19 @@ export default function DoctorSignupForm() {
               <button
                 type="button"
                 onClick={handleBack}
-                className={`${buttonSecondaryClass} flex items-center justify-center gap-2 w-1/2`}
+                className={`${buttonSecondaryClass} w-1/2`}
               >
                 <FaArrowLeft size={14} />
                 Back
               </button>
             )}
-            {step < 4 ? (
+            {step < TOTAL_STEPS ? (
               <button
                 type="button"
                 onClick={handleNext}
-                className={`${buttonPrimaryClass} flex items-center justify-center gap-2 ${step > 1 ? "w-1/2" : "w-full"
-                  }`}
+                className={`${buttonPrimaryClass} ${step > 1 ? "w-1/2" : "w-full"}`}
               >
-                Next
+                Continue
                 <FaArrowRight size={14} />
               </button>
             ) : (
@@ -766,19 +691,23 @@ export default function DoctorSignupForm() {
                 disabled={loading}
                 className={`${buttonPrimaryClass} w-1/2`}
               >
-                {loading ? "Registering..." : "Complete Registration"}
+                {loading ? (
+                  <ButtonLoader text="Creating Account..." />
+                ) : (
+                  "Complete Registration"
+                )}
               </button>
             )}
           </div>
         </form>
 
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
           Already have an account?{" "}
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/doctor/login")}
             className="text-green-600 hover:underline font-medium"
           >
-            Login here
+            Sign in
           </button>
         </p>
       </div>
@@ -796,6 +725,8 @@ function InputField({
   placeholder,
   required = false,
   error,
+  min,
+  max,
 }) {
   return (
     <div>
@@ -803,7 +734,7 @@ function InputField({
         htmlFor={id}
         className="block text-sm mb-1 text-gray-700 dark:text-gray-300"
       >
-        {label}
+        {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
         id={id}
@@ -812,8 +743,10 @@ function InputField({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`${inputClass} ${error ? "border-red-500 focus:ring-red-500" : ""}`}
+        className={error ? errorInputClass : inputClass}
         required={required}
+        min={min}
+        max={max}
       />
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
@@ -830,49 +763,6 @@ InputField.propTypes = {
   placeholder: PropTypes.string,
   required: PropTypes.bool,
   error: PropTypes.string,
-};
-
-function PasswordField({ label, id, name, value, onChange, placeholder, error }) {
-  const [show, setShow] = useState(false);
-
-  return (
-    <div>
-      <label
-        htmlFor={id}
-        className="block text-sm mb-1 text-gray-700 dark:text-gray-300"
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          type={show ? "text" : "password"}
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className={`${inputClass} pr-10 ${error ? "border-red-500 focus:ring-red-500" : ""}`}
-          required
-        />
-        <button
-          type="button"
-          onClick={() => setShow(!show)}
-          className="absolute right-3 top-3 text-gray-500 dark:text-gray-400"
-        >
-          {show ? <FaEyeSlash /> : <FaEye />}
-        </button>
-      </div>
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
-
-PasswordField.propTypes = {
-  label: PropTypes.string.isRequired,
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  placeholder: PropTypes.string,
-  error: PropTypes.string,
+  min: PropTypes.string,
+  max: PropTypes.string,
 };

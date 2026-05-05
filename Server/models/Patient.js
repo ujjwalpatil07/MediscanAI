@@ -42,8 +42,18 @@ const patientSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    appointments : [{
+      type : mongoose.Schema.Types.ObjectId,
+      ref : "Appointment"
+    }],
 
-    appointments: [
+    prescriptions : [{
+      type : mongoose.Schema.Types.ObjectId,
+      ref : "Prescription"
+    }],
+
+    // 🔹 Medical Info
+    medicalHistory: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Appointment",

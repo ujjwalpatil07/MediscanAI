@@ -31,6 +31,8 @@ import DoctorProfile from "../pages/doctor/Profile";
 // import DoctorSchedule from "../pages/doctor/Schedule";
 import DoctorSettings from "../pages/doctor/Settings";
 import DoctorLayout from "../layouts/DoctorLayout";
+import PatientDetail from "../pages/doctor/PatientDetail";
+import Blog from "../pages/doctor/Blog";
 // import DoctorConsultation from "../pages/doctor/Consultation";
 // import DoctorChat from "../pages/doctor/Chat";
 
@@ -83,17 +85,8 @@ export default function Routers() {
 
         {/* Doctor Patients */}
         <Route path="/d/patients" element={<DoctorPatients />} />
-        <Route path="/d/patients/:id" element={<DoctorPatients />} />
+        <Route path="/d/patients/:id" element={<PatientDetail />} />
         <Route path="/d/patients/:id/medical-history" element={<DoctorPatients />} />
-
-        {/* Doctor Consultations */}
-        {/* <Route path="/d/consultations" element={<DoctorConsultation />} />
-        <Route path="/d/consultations/new" element={<DoctorConsultation />} />
-        <Route path="/d/consultations/:id" element={<DoctorConsultation />} /> */}
-
-        {/* Doctor Schedule
-        // <Route path="/d/schedule" element={<DoctorSchedule />} />
-        // <Route path="/d/schedule/edit" element={<DoctorSchedule />} /> */}
 
         {/* Doctor Payments */}
         <Route path="/d/payments" element={<DoctorPayments />} />
@@ -108,8 +101,8 @@ export default function Routers() {
         {/* <Route path="/d/chat/:patientId" element={<DoctorChat />} /> */}
 
         {/* Doctor Blog */}
-        <Route path="/d/blog" element={<DoctorMessages />} />
-        <Route path="/d/blog/new" element={<DoctorMessages />} />
+        <Route path="/d/blog" element={<Blog />} />
+        <Route path="/d/blog/new" element={<Blog />} />
 
         {/* Doctor Profile */}
         <Route path="/d/profile" element={<DoctorProfile />} />
