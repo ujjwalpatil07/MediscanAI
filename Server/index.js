@@ -1,37 +1,38 @@
-import express from "express"; // Main Express framework
-import dotenv from "dotenv"; // Loads .env variables
-import helmet from "helmet"; // Secure HTTP headers
-import cors from "cors"; // Allow cross-origin requests
-import compression from "compression"; // Gzip compress responses
-import cookieParser from "cookie-parser"; // Parse cookies from incoming requests
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import http from "node:http";
+
+import { initSocket } from "./sockets/index.js";
+
 import authRoutes from '../Server/routes/authRoutes.js'
 import uploadRoutes from "./routes/upload.routes.js";
 
 
-dotenv.config();
-const app = express();
-const PORT = process.env.PORT || 5000;
-
 import { connectDB } from "./config/initDB.js";
 import { corsOptions } from "./config/cors.js";
 
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(helmet());
 app.use(cors(corsOptions));
 app.use(compression());
 connectDB();
 
+const server = http.createServer(app);
+const io = initSocket(server);
 
-app.get("/", (req, res) => {
-  res.status(200).json({ message: "Server is running securely 🚀" });
+app.use((req, res, next) => {
+  req.io = io;
+  next();
 });
-
 
 app.use("/auth", authRoutes);
 app.use("/upload", uploadRoutes);
-
 
 app.get("*", (req, res) => {
   res
@@ -47,6 +48,8 @@ app.use((err, req, res, next) => {
 });
 
 const startServer = async () => {
+  await connectDB();
+
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });

@@ -59,17 +59,17 @@ export default function Routers() {
       <Route path="/doctors" element={<PatientLayout><DoctorsListingPage /></PatientLayout>} />
       <Route path="/doctor/:id" element={<PatientLayout><DoctorProfilePage /></PatientLayout>} />
 
+      {/* -------------------------------------------------------Patient Routes----------------------------------------------------------- */}
       <Route path="/p/dashboard" element={<PatientLayout><PatientDashboard /></PatientLayout>} />
       <Route path="/p/book-appointment/:doctor_id" element={<PatientLayout><BookAppointmentPage /></PatientLayout>} />
       <Route path="/p/my-appointments" element={<PatientLayout><MyAppointmentsPage /></PatientLayout>} />
       <Route path="/p/symptom-checker" element={<PatientLayout><SymptomChecker/></PatientLayout>} />
       <Route path="/p/prescriptions" element={<PatientLayout><PrescriptionsPage/></PatientLayout>} />
       <Route path="/p/medical-records" element={<PatientLayout><MedicalRecordsPage/></PatientLayout>} />
- 
       <Route path="/p/profile" element={<PatientLayout><PatientProfile/></PatientLayout>} />
 
-      <Route path="*" element={<NotFound />} />
 
+      {/* ------------------------------------------------------------Doctor Routes----------------------------------------------------- */}
       <Route element={<DoctorLayout />}>
         {/* Doctor Dashboard */}
         <Route path="/d/dashboard" element={<DoctorDashboard />} />

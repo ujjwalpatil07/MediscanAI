@@ -28,6 +28,7 @@ const patientSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
+      trim: true,
     },
     mobile: {
       type: String,
@@ -41,7 +42,6 @@ const patientSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
     appointments : [{
       type : mongoose.Schema.Types.ObjectId,
       ref : "Appointment"
@@ -55,18 +55,14 @@ const patientSchema = new mongoose.Schema(
     // 🔹 Medical Info
     medicalHistory: [
       {
-        condition: String,
-        diagnosedDate: Date,
-        notes: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Appointment",
       },
     ],
-
-    allergies: [String],
-
-    currentMedications: [
+    prescriptions: [
       {
-        name: String,
-        dosage: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Prescription",
       },
     ],
 
@@ -76,6 +72,24 @@ const patientSchema = new mongoose.Schema(
 
     height: Number, // in cm
     weight: Number, // in kg
+
+    allergies: [String],
+    
+    currentMedications: [
+      {
+        name: String,
+        dosage: String,
+      },
+    ],
+
+    // 🔹 Medical Info
+    medicalHistory: [
+      {
+        condition: String,
+        diagnosedDate: Date,
+        notes: String,
+      },
+    ],
 
     // 🔹 Optional (for future)
     emergencyContact: {
