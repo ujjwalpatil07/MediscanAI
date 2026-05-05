@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const appointmentSchema = new mongoose.Schema(
   {
+    // 🔹 Relations
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Patient",
@@ -12,52 +13,111 @@ const appointmentSchema = new mongoose.Schema(
       ref: "Doctor",
       required: true,
     },
+
+    // 🔹 Appointment Timing (IMPROVED)
     appointmentDate: {
       type: Date,
       required: true,
+      index: true,
     },
-    appointmentTime: {
-      type: String,
+
+    startTime: {
+      type: Date, // exact datetime
       required: true,
     },
+
+    endTime: {
+      type: Date,
+      required: true,
+    },
+
+    slotDuration: {
+      type: Number, // in minutes (e.g., 30)
+      default: 30,
+    },
+
+    // 🔹 Type & Status
     appointmentType: {
       type: String,
-      enum: ["video", "in-person", "phone"],
-      default: "video",
+      enum: ["video", "clinic"],
+      default: "clinic",
     },
+
     status: {
       type: String,
-      enum: ["upcoming", "completed", "cancelled", "rescheduled"],
-      default: "upcoming",
+      enum: ["scheduled", "upcoming", "completed", "cancelled", "no-show"],
+      default: "scheduled",
     },
-    paymentStatus: {
-      type: String,
-      enum: ["paid", "pending", "refunded", "failed"],
-      default: "pending",
-    },
+
+    // 🔹 Payment (IMPROVED)
     consultationFee: {
       type: Number,
       required: true,
     },
-    symptoms: {
-      type: String,
+
+    payment: {
+      status: {
+        type: String,
+        enum: ["pending", "paid", "failed", "refunded"],
+        default: "pending",
+      },
+      method: {
+        type: String,
+        enum: ["upi", "card", "cash"],
+      },
+      transactionId: String,
+      paidAt: Date,
     },
-    diagnosis: {
-      type: String,
+
+    // 🔹 Medical Info
+    symptoms: String,
+    diagnosis: String,
+    notes: String,
+
+    // 🔹 Family Booking (VERY IMPORTANT 🔥)
+    patientDetails: {
+      name: String,
+      age: Number,
+      gender: String,
+      relation: String, // father, mother, self
     },
-    prescription: {
+
+    // 🔹 Snapshot (for fast UI)
+    doctorSnapshot: {
+      name: String,
+      specialty: String,
+      image: String,
+      rating: Number,
+    },
+
+    // 🔹 Location
+    location: {
+      city: String,
+      state: String,
+      fullAddress: String,
+    },
+
+    // 🔹 Video Call
+    meetingLink: String,
+
+    // 🔹 Cancellation Tracking
+    cancelledBy: {
+      type: String,
+      enum: ["patient", "doctor", "system"],
+    },
+    cancelReason: String,
+
+    // 🔹 Prescription
+    prescriptionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Prescription",
-    },
-    notes: {
-      type: String,
-    },
-    cancellationReason: {
-      type: String,
     },
   },
   { timestamps: true },
 );
+
+// 🔥 Prevent double booking (IMPORTANT)
+appointmentSchema.index({ doctorId: 1, startTime: 1 }, { unique: true });
 
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 export default Appointment;
