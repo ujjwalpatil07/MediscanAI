@@ -1,102 +1,3 @@
-// import Patient from "../models/Patient.js";
-// import { generateToken } from "../utils/token.js";
-
-// export const patientSignup = async (req, res, next) => {
-//
-//     const { email } = req.body;
-
-//     const existingPatient = await Patient.findOne({ email });
-//     if (existingPatient) {
-//       const error = new Error("Patient with this email already exists");
-//       error.status = 409;
-//       throw error;
-//     }
-
-//     const patient = await Patient.create(req.body);
-
-//     const token = generateToken({
-//       id: patient._id,
-//       email: patient.email,
-//       role: "patient",
-//     });
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Patient registered successfully",
-//       token,
-//       user: {
-//         id: patient._id,
-//         firstName: patient.firstName,
-//         lastName: patient.lastName,
-//         email: patient.email,
-//         role: "patient",
-//       },
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-// export const patientLogin = async (req, res, next) => {
-//
-//     const { email, password } = req.body;
-
-//     const patient = await Patient.findOne({ email });
-//     if (!patient) {
-//       const error = new Error("Invalid email or password");
-//       error.status = 401;
-//       throw error;
-//     }
-
-//     const isPasswordMatch = await patient.matchPassword(password);
-//     if (!isPasswordMatch) {
-//       const error = new Error("Invalid email or password");
-//       error.status = 401;
-//       throw error;
-//     }
-
-//     const token = generateToken({
-//       id: patient._id,
-//       email: patient.email,
-//       role: "patient",
-//     });
-
-//     res.json({
-//       success: true,
-//       message: "Login successful",
-//       token,
-//       user: {
-//         id: patient._id,
-//         firstName: patient.firstName,
-//         lastName: patient.lastName,
-//         email: patient.email,
-//         role: "patient",
-//       },
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-// export const getCurrentPatient = async (req, res, next) => {
-//
-//     const patient = await Patient.findById(req.user.id).select("-password");
-
-//     if (!patient) {
-//       const error = new Error("Patient not found");
-//       error.status = 404;
-//       throw error;
-//     }
-
-//     res.json({
-//       success: true,
-//       user: patient,
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 import Patient from "../models/Patient.js";
 import Doctor from "../models/Doctor.js";
 import { generateToken } from "../utils/token.js";
@@ -190,25 +91,50 @@ export const getCurrentPatient = async (req, res) => {
 };
 
 export const doctorSignup = async (req, res) => {
-  const { email, username } = req.body;
+  const {
+    email,
+    password,
+    firstName,
+    lastName,
+    phone,
+    gender,
+    dob,
+    specialty,
+    licenseNumber,
+    yearsOfExperience,
+    medicalDegree,
+    consultationFee,
+  } = req.body;
 
-  const existingDoctor = await Doctor.findOne({
-    $or: [{ email }, { username }],
-  });
+  // console.log("hii");
 
+  // Check existing doctor
+  const existingDoctor = await Doctor.findOne({ email });
   if (existingDoctor) {
-    const message =
-      existingDoctor.email === email
-        ? "Doctor with this email already exists"
-        : "Username already taken";
-
     return res.status(409).json({
       success: false,
-      message,
+      message: "A doctor with this email already exists",
     });
   }
 
-  const doctor = await Doctor.create(req.body);
+  // Create doctor with required fields only
+  const doctor = await Doctor.create({
+    email,
+    password,
+    firstName,
+    lastName,
+    phone,
+    gender,
+    dob: dob || undefined,
+    specialty,
+    licenseNumber,
+    yearsOfExperience,
+    medicalDegree,
+    consultationFee,
+    joinedDate: new Date(),
+    lastActive: new Date(),
+    profileCompletion: 40, // Basic profile completion
+  });
 
   const token = generateToken({
     id: doctor._id,
@@ -218,14 +144,16 @@ export const doctorSignup = async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: "Doctor registered successfully",
+    message: "Doctor registered successfully. Please complete your profile.",
     token,
     user: {
       id: doctor._id,
       firstName: doctor.firstName,
       lastName: doctor.lastName,
       email: doctor.email,
+      specialty: doctor.specialty,
       role: "doctor",
+      profileCompletion: doctor.profileCompletion,
     },
   });
 };
@@ -308,5 +236,76 @@ export const getCurrentUser = async (req, res) => {
       ...user.toObject(),
       role,
     },
+  });
+};
+
+export const updateDoctorProfile = async (req, res) => {
+  const doctorId = req.user.id;
+  const updateData = req.body;
+
+  // Fields that shouldn't be updated directly
+  delete updateData._id;
+  delete updateData.password;
+  delete updateData.role;
+  delete updateData.email;
+  delete updateData.createdAt;
+  delete updateData.updatedAt;
+  delete updateData.__v;
+  delete updateData.rating;
+  delete updateData.totalReviews;
+  delete updateData.totalPatients;
+  delete updateData.totalAppointments;
+  delete updateData.isVerified;
+  delete updateData.joinedDate;
+  delete updateData.appointments;
+  delete updateData.patients;
+  delete updateData.blogs;
+  delete updateData.prescriptions;
+  delete updateData.messages;
+  delete updateData.notifications;
+  delete updateData.transactions;
+  delete updateData.withdrawals;
+  delete updateData.reviews;
+  delete updateData.recentActivity;
+  delete updateData.paymentDetails;
+
+  // Calculate profile completion
+  let completed = 0;
+  const total = 15;
+  if (updateData.firstName && updateData.lastName) completed++;
+  if (updateData.email || req.user.email) completed++;
+  if (updateData.phone) completed++;
+  if (updateData.specialty) completed++;
+  if (updateData.licenseNumber) completed++;
+  if (updateData.medicalDegree) completed++;
+  if (updateData.yearsOfExperience) completed++;
+  if (updateData.consultationFee) completed++;
+  if (updateData.bio) completed++;
+  if (updateData.clinicName) completed++;
+  if (updateData.clinicAddress) completed++;
+  if (updateData.availableDays?.length > 0) completed++;
+  if (updateData.profilePhoto) completed++;
+  if (updateData.degreeCertificate) completed++;
+  if (updateData.idProof) completed++;
+
+  updateData.profileCompletion = Math.round((completed / total) * 100);
+
+  const doctor = await Doctor.findByIdAndUpdate(
+    doctorId,
+    { $set: updateData },
+    { new: true, runValidators: true },
+  ).select("-password");
+
+  if (!doctor) {
+    return res.status(404).json({
+      success: false,
+      message: "Doctor not found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Profile updated successfully",
+    user: doctor,
   });
 };

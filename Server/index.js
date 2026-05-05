@@ -5,6 +5,8 @@ import cors from "cors"; // Allow cross-origin requests
 import compression from "compression"; // Gzip compress responses
 import cookieParser from "cookie-parser"; // Parse cookies from incoming requests
 import authRoutes from '../Server/routes/authRoutes.js'
+import uploadRoutes from "./routes/upload.routes.js";
+
 
 dotenv.config();
 const app = express();
@@ -19,7 +21,6 @@ app.use(cookieParser());
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(compression());
-
 connectDB();
 
 
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 
 
 app.use("/auth", authRoutes);
+app.use("/upload", uploadRoutes);
 
 
 app.get("*", (req, res) => {

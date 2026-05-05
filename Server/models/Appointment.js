@@ -22,17 +22,17 @@ const appointmentSchema = new mongoose.Schema(
     },
     appointmentType: {
       type: String,
-      enum: ["video", "in-person", "phone"],
-      default: "video",
+      enum: ["online", "clinic-visit"],
+      default: "clinic-visit",
     },
     status: {
       type: String,
-      enum: ["upcoming", "completed", "cancelled", "rescheduled"],
+      enum: ["upcoming", "completed", "cancelled"],
       default: "upcoming",
     },
     paymentStatus: {
       type: String,
-      enum: ["paid", "pending", "refunded", "failed"],
+      enum: ["paid", "pending", "failed"],
       default: "pending",
     },
     consultationFee: {
@@ -51,10 +51,7 @@ const appointmentSchema = new mongoose.Schema(
     },
     notes: {
       type: String,
-    },
-    cancellationReason: {
-      type: String,
-    },
+    }
   },
   { timestamps: true },
 );

@@ -42,6 +42,16 @@ const patientSchema = new mongoose.Schema(
       required: true,
     },
 
+    appointments : [{
+      type : mongoose.Schema.Types.ObjectId,
+      ref : "Appointment"
+    }],
+
+    prescriptions : [{
+      type : mongoose.Schema.Types.ObjectId,
+      ref : "Prescription"
+    }],
+
     // 🔹 Medical Info
     medicalHistory: [
       {
