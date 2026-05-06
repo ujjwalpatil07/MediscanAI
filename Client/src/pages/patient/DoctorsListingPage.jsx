@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
     Search,
@@ -13,44 +13,85 @@ import {
     User,
     Stethoscope
 } from "lucide-react";
-import { doctorsData } from "../../utils/data";
-
-// Get unique specialties for filter dropdown
-const specialties = ["All Specialties", ...new Set(doctorsData.map(doc => doc.specialty))];
+import toast from "react-hot-toast";
+import { getAllDoctorsService } from "../../services/doctor.service";
+import Loader from "../../components/common/Loader";
 
 export default function DoctorsListingPage() {
+    const [doctors, setDoctors] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedSpecialty, setSelectedSpecialty] = useState("All Specialties");
+    const [sortBy, setSortBy] = useState("rating");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [specialties, setSpecialties] = useState(["All Specialties"]);
 
-    // Filter doctors based on search query and specialty
+    // Fetch doctors from API
+    const fetchDoctors = useCallback(async () => {
+        try {
+            setLoading(true);
+            const params = {
+                sortBy: sortBy,
+                ...(selectedSpecialty !== "All Specialties" && { specialty: selectedSpecialty })
+            };
+
+            const response = await getAllDoctorsService(params);
+
+            if (response.data.success) {
+                setDoctors(response.data.data);
+                // Extract unique specialties from fetched doctors
+                const uniqueSpecialties = ["All Specialties", ...new Set(
+                    response.data.data.map(doc => doc.specialty).filter(Boolean)
+                )];
+                setSpecialties(uniqueSpecialties);
+            } else {
+                toast.error("Failed to load doctors");
+            }
+        } catch (error) {
+            console.error("Error fetching doctors:", error);
+            toast.error(error.response?.data?.message || "Failed to load doctors");
+        } finally {
+            setLoading(false);
+        }
+    }, [sortBy, selectedSpecialty]);
+
+    // Initial fetch and when filters change
+    useEffect(() => {
+        fetchDoctors();
+    }, [fetchDoctors]);
+
+    // Filter doctors based on search query (client-side filtering for better UX)
     const filteredDoctors = useMemo(() => {
-        let filtered = doctorsData;
+        let filtered = doctors;
 
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(doctor =>
                 `${doctor.firstName} ${doctor.lastName}`.toLowerCase().includes(query) ||
-                doctor.specialty.toLowerCase().includes(query)
+                doctor.specialty?.toLowerCase().includes(query) ||
+                doctor.clinicCity?.toLowerCase().includes(query)
             );
         }
 
-        // Filter by specialty
-        if (selectedSpecialty !== "All Specialties") {
-            filtered = filtered.filter(doctor => doctor.specialty === selectedSpecialty);
-        }
-
         return filtered;
-    }, [searchQuery, selectedSpecialty]);
+    }, [doctors, searchQuery]);
 
     // Clear all filters
     const clearFilters = () => {
         setSearchQuery("");
         setSelectedSpecialty("All Specialties");
+        setSortBy("rating");
     };
 
-    // Get unique specialties for filter (excluding "All Specialties")
-    const filterSpecialties = specialties.slice(1);
+    // Handle sort change
+    const handleSortChange = (value) => {
+        setSortBy(value);
+    };
+
+    // Loading state
+    if (loading) {
+        return <Loader size="lg" color="green" fullScreen text="Loading doctors..." />;
+    }
 
     return (
         <div className="min-h-screen bg-gray-100 text-gray-800 dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353] dark:text-gray-300">
@@ -73,12 +114,26 @@ export default function DoctorsListingPage() {
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search by doctor name or specialty..."
+                                placeholder="Search by doctor name, specialty, or city..."
                                 className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             />
                         </div>
 
-                        {/* Filter Dropdown - Desktop */}
+                        {/* Sort Dropdown - Desktop */}
+                        <div className="hidden md:block relative">
+                            <select
+                                value={sortBy}
+                                onChange={(e) => handleSortChange(e.target.value)}
+                                className="px-5 py-3 pr-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
+                            >
+                                <option value="rating">Sort by Rating</option>
+                                <option value="experience">Sort by Experience</option>
+                                <option value="fees">Sort by Fees (Low to High)</option>
+                            </select>
+                            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+
+                        {/* Specialty Filter Dropdown - Desktop */}
                         <div className="hidden md:block relative">
                             <select
                                 value={selectedSpecialty}
@@ -89,7 +144,7 @@ export default function DoctorsListingPage() {
                                     <option key={idx} value={specialty}>{specialty}</option>
                                 ))}
                             </select>
-                            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <Stethoscope className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>
 
                         {/* Filter Button - Mobile */}
@@ -98,16 +153,16 @@ export default function DoctorsListingPage() {
                             className="md:hidden flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                         >
                             <Filter className="w-5 h-5" />
-                            Filter by Specialty
-                            {selectedSpecialty !== "All Specialties" && (
+                            Filters
+                            {(selectedSpecialty !== "All Specialties" || sortBy !== "rating") && (
                                 <span className="ml-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
-                                    {selectedSpecialty}
+                                    Active
                                 </span>
                             )}
                         </button>
 
                         {/* Clear Filters Button */}
-                        {(searchQuery || selectedSpecialty !== "All Specialties") && (
+                        {(searchQuery || selectedSpecialty !== "All Specialties" || sortBy !== "rating") && (
                             <button
                                 onClick={clearFilters}
                                 className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
@@ -120,35 +175,57 @@ export default function DoctorsListingPage() {
 
                     {/* Mobile Filter Dropdown */}
                     {isFilterOpen && (
-                        <div className="md:hidden mt-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                            <div className="space-y-2">
-                                <button
-                                    onClick={() => {
-                                        setSelectedSpecialty("All Specialties");
-                                        setIsFilterOpen(false);
-                                    }}
-                                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${selectedSpecialty === "All Specialties"
-                                        ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                                        : "hover:bg-gray-50 dark:hover:bg-gray-700"
-                                        }`}
-                                >
-                                    All Specialties
-                                </button>
-                                {filterSpecialties.map((specialty, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => {
-                                            setSelectedSpecialty(specialty);
-                                            setIsFilterOpen(false);
-                                        }}
-                                        className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${selectedSpecialty === specialty
-                                            ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                                            : "hover:bg-gray-50 dark:hover:bg-gray-700"
-                                            }`}
-                                    >
-                                        {specialty}
-                                    </button>
-                                ))}
+                        <div className="md:hidden mt-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+                            {/* Sort Options */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Sort By
+                                </label>
+                                <div className="space-y-2">
+                                    {[
+                                        { value: "rating", label: "Rating (High to Low)" },
+                                        { value: "experience", label: "Experience (High to Low)" },
+                                        { value: "fees", label: "Fees (Low to High)" }
+                                    ].map(option => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => {
+                                                handleSortChange(option.value);
+                                                setIsFilterOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${sortBy === option.value
+                                                    ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                                                    : "hover:bg-gray-50 dark:hover:bg-gray-700"
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Specialty Options */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Specialty
+                                </label>
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {specialties.map((specialty, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                setSelectedSpecialty(specialty);
+                                                setIsFilterOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${selectedSpecialty === specialty
+                                                    ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                                                    : "hover:bg-gray-50 dark:hover:bg-gray-700"
+                                                }`}
+                                        >
+                                            {specialty}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -161,6 +238,9 @@ export default function DoctorsListingPage() {
                     Found <span className="font-semibold text-gray-900 dark:text-white">{filteredDoctors.length}</span> doctors
                     {selectedSpecialty !== "All Specialties" && ` in ${selectedSpecialty}`}
                     {searchQuery && ` matching "${searchQuery}"`}
+                    {sortBy === "rating" && " sorted by rating"}
+                    {sortBy === "experience" && " sorted by experience"}
+                    {sortBy === "fees" && " sorted by fees"}
                 </p>
             </div>
 
@@ -186,15 +266,18 @@ export default function DoctorsListingPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredDoctors.map((doctor) => (
                             <div
-                                key={doctor.id}
+                                key={doctor._id}
                                 className="group bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1"
                             >
                                 {/* Doctor Image */}
                                 <div className="relative h-48 overflow-hidden bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20">
                                     <img
-                                        src={doctor.image}
+                                        src={doctor.profilePhoto || `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff`}
                                         alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        onError={(e) => {
+                                            e.target.src = `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff`;
+                                        }}
                                     />
                                     {/* Verified Badge */}
                                     {doctor.isVerified && (
@@ -204,10 +287,12 @@ export default function DoctorsListingPage() {
                                         </div>
                                     )}
                                     {/* Rating Badge */}
-                                    <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
-                                        <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                                        <span className="text-gray-900 dark:text-white">{doctor.rating}</span>
-                                    </div>
+                                    {doctor.rating > 0 && (
+                                        <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
+                                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                            <span className="text-gray-900 dark:text-white">{doctor.rating}</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Doctor Info */}
@@ -217,34 +302,40 @@ export default function DoctorsListingPage() {
                                     </h3>
                                     <p className="text-green-600 dark:text-green-400 text-sm font-medium mb-3 flex items-center gap-1">
                                         <Stethoscope className="w-3 h-3" />
-                                        {doctor.specialty}
+                                        {doctor.specialty || "General Physician"}
                                     </p>
 
                                     <div className="space-y-2 mb-4">
-                                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                            <Briefcase className="w-4 h-4" />
-                                            <span>{doctor.yearsOfExperience} years experience</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                            <DollarSign className="w-4 h-4" />
-                                            <span>₹{doctor.consultationFee} consultation fee</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                            <MapPin className="w-4 h-4" />
-                                            <span>{doctor.clinicAddress.city}</span>
-                                        </div>
+                                        {doctor.yearsOfExperience > 0 && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                                <Briefcase className="w-4 h-4" />
+                                                <span>{doctor.yearsOfExperience} years experience</span>
+                                            </div>
+                                        )}
+                                        {doctor.consultationFee > 0 && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                                <DollarSign className="w-4 h-4" />
+                                                <span>₹{doctor.consultationFee} consultation fee</span>
+                                            </div>
+                                        )}
+                                        {doctor.clinicCity && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                                <MapPin className="w-4 h-4" />
+                                                <span>{doctor.clinicCity}{doctor.clinicState ? `, ${doctor.clinicState}` : ''}</span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Action Buttons */}
                                     <div className="flex gap-3">
                                         <Link
-                                            to={`/doctor/${doctor.id}`}
+                                            to={`/doctor/${doctor._id}`}
                                             className="flex-1 text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg font-medium transition-colors text-sm"
                                         >
                                             View Profile
                                         </Link>
                                         <Link
-                                            to={`/p/book-appointment/${doctor.id}`}
+                                            to={`/p/book-appointment/${doctor._id}`}
                                             className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-1"
                                         >
                                             Book <ChevronRight className="w-3 h-3" />
@@ -260,7 +351,7 @@ export default function DoctorsListingPage() {
             {/* Footer Note */}
             <div className="bg-white dark:bg-gray-800/30 py-4 text-center border-t border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing {filteredDoctors.length} of {doctorsData.length} doctors
+                    Showing {filteredDoctors.length} of {doctors.length} doctors
                 </p>
             </div>
         </div>

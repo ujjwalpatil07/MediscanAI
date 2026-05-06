@@ -21,6 +21,8 @@ import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  getAllDoctors,
+  getDoctorById,
 } from "../controllers/doctor.controller.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import wrapAsync from "../utils/wrapAsync.js";
@@ -29,6 +31,10 @@ const router = express.Router();
 
 // All routes require authentication and doctor role
 router.use(authMiddleware);
+
+router.get("/", wrapAsync(getAllDoctors));
+
+router.get("/:id", wrapAsync(getDoctorById));
 
 // Dashboard
 router.get("/dashboard", wrapAsync(getDashboardData));

@@ -7,6 +7,57 @@ import Transaction from "../models/Transaction.js";
 import Message from "../models/Message.js";
 import Notification from "../models/Notification.js";
 import mongoose from "mongoose";
+import httpStatus from "http-status";
+
+
+// ✅ GET ALL DOCTORS (WITH FILTER SUPPORT)
+export const getAllDoctors = async (req, res) => {
+  const { specialty, city, sortBy } = req.query;
+
+  const filter = { isActive: true, isVerified: true };
+
+  if (specialty) filter.specialty = specialty;
+  if (city) filter.clinicCity = city;
+
+  let query = Doctor.find(filter).select(
+    "firstName lastName specialty yearsOfExperience consultationFee rating profilePhoto clinicCity clinicState",
+  );
+
+  // 🔥 Sorting
+  if (sortBy === "rating") query = query.sort({ rating: -1 });
+  else if (sortBy === "experience")
+    query = query.sort({ yearsOfExperience: -1 });
+  else if (sortBy === "fees") query = query.sort({ consultationFee: 1 });
+
+  const doctors = await query;
+
+  return res.status(httpStatus.OK).json({
+    success: true,
+    count: doctors.length,
+    data: doctors,
+  });
+};
+
+export const getDoctorById = async (req, res) => {
+  const { id } = req.params;
+
+  const doctor = await Doctor.findById(id).select(
+    "firstName lastName specialty yearsOfExperience consultationFee rating profilePhoto bio clinicCity clinicState availableDays availableTimeSlots",
+  );
+
+  if (!doctor) {
+    return res.status(httpStatus.NOT_FOUND).json({
+      success: false,
+      message: "Doctor not found",
+    });
+  }
+
+  return res.status(httpStatus.OK).json({
+    success: true,
+    data: doctor,
+  });
+};
+
 
 // ==================== DASHBOARD ====================
 

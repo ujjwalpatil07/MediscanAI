@@ -64,6 +64,8 @@ app.use("/p/prescription", prescriptionRoutes);
 app.use("/p/medical-record", medicalRecordRoutes);
 app.use("/p/ai", aiRoutes);
 
+
+
 app.use("/doctor", doctorRoutes);
 app.use("/auth", authRoutes);
 app.use("/upload", uploadRoutes);

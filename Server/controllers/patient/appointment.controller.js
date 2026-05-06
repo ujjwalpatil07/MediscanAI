@@ -7,97 +7,89 @@ import Patient from "../../models/Patient.js";
 
 export const bookAppointment = async (req, res) => {
   const session = await mongoose.startSession();
-  session.startTransaction();
 
-  const patientId = req.user.id;
+  try {
+    session.startTransaction();
 
-  const {
-    doctorId,
-    appointmentDate,
-    startTime,
-    endTime,
-    appointmentType,
-    symptoms,
-    patientDetails,
-  } = req.body;
+    const patientId = req.user.id;
 
-  if (!doctorId || !startTime || !endTime || !appointmentDate) {
-    const error = new Error("Missing required fields");
-    error.status = httpStatus.BAD_REQUEST;
-    throw error;
-  }
+    const {
+      doctorId,
+      appointmentDate,
+      startTime,
+      endTime,
+      appointmentType,
+      symptoms,
+      patientDetails,
+    } = req.body;
 
-  const doctor = await Doctor.findById(doctorId).session(session);
-  if (!doctor) {
-    const error = new Error("Doctor not found");
-    error.status = httpStatus.NOT_FOUND;
-    throw error;
-  }
+    if (!doctorId || !startTime || !endTime || !appointmentDate) {
+      throw new Error("Missing required fields");
+    }
 
-  const patient = await Patient.findById(patientId).session(session);
-  if (!patient) {
-    const error = new Error("Patient not found");
-    error.status = httpStatus.NOT_FOUND;
-    throw error;
-  }
+    const doctor = await Doctor.findById(doctorId).session(session);
+    if (!doctor) throw new Error("Doctor not found");
 
-  const existing = await Appointment.findOne({
-    doctorId,
-    startTime: new Date(startTime),
-  }).session(session);
+    const patient = await Patient.findById(patientId).session(session);
+    if (!patient) throw new Error("Patient not found");
 
-  if (existing) {
-    const error = new Error("Slot already booked");
-    error.status = httpStatus.BAD_REQUEST;
-    throw error;
-  }
+    const existing = await Appointment.findOne({
+      doctorId,
+      appointmentDate: new Date(appointmentDate),
+      startTime: new Date(startTime),
+    }).session(session);
 
-  // ✅ Create Appointment
-  const appointment = await Appointment.create(
-    [
-      {
-        patientId,
-        doctorId,
-        appointmentDate,
-        startTime,
-        endTime,
-        appointmentType,
-        symptoms,
-        patientDetails,
+    if (existing) throw new Error("Slot already booked");
 
-        consultationFee: doctor.consultationFee,
-
-        doctorSnapshot: {
-          name: `Dr. ${doctor.firstName} ${doctor.lastName}`,
-          specialty: doctor.specialty,
-          image: doctor.profilePhoto,
-          rating: doctor.rating,
+    const appointment = await Appointment.create(
+      [
+        {
+          patientId,
+          doctorId,
+          appointmentDate,
+          startTime,
+          endTime,
+          appointmentType,
+          symptoms,
+          patientDetails,
+          consultationFee: doctor.consultationFee,
+          doctorSnapshot: {
+            name: `Dr. ${doctor.firstName} ${doctor.lastName}`,
+            specialty: doctor.specialty,
+            image: doctor.profilePhoto,
+            rating: doctor.rating,
+          },
         },
-      },
-    ],
-    { session },
-  );
+      ],
+      { session },
+    );
 
-  const createdAppointment = appointment[0];
+    const createdAppointment = appointment[0];
 
-  // ✅ Push into Patient
-  patient.appointments.push(createdAppointment._id);
+    patient.appointments.push(createdAppointment._id);
+    doctor.appointments.push(createdAppointment._id);
+    doctor.patients.addToSet(patientId);
 
-  // ✅ Push into Doctor
-  doctor.appointments.push(createdAppointment._id);
-  doctor.patients.addToSet(patientId); // avoid duplicates
+    await patient.save({ session });
+    await doctor.save({ session });
 
-  await patient.save({ session });
-  await doctor.save({ session });
+    await session.commitTransaction();
 
-  await session.commitTransaction();
-  session.endSession();
+    return res.status(201).json({
+      success: true,
+      message: "Appointment booked successfully",
+      data: createdAppointment,
+    });
+  } catch (error) {
+    await session.abortTransaction();
 
-  return res.status(httpStatus.CREATED).json({
-    success: true,
-    message: "Appointment booked successfully",
-    data: createdAppointment,
-  });
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  } finally {
+    session.endSession();
+  }
 };
 
 export const getAvailableSlots = async (req, res) => {
@@ -140,28 +132,46 @@ export const getAvailableSlots = async (req, res) => {
     slots.push({
       startTime: new Date(current),
       endTime: new Date(next),
+      displayTime: current.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      }),
+      isBooked: false, // Default to false
     });
 
     current = next;
   }
 
-  // remove booked slots
-  const booked = await Appointment.find({
+  // Get all booked appointments (not just upcoming, but all for that date)
+  const bookedAppointments = await Appointment.find({
     doctorId,
-    appointmentDate: selectedDate,
+    appointmentDate: {
+      $gte: new Date(`${date}T00:00:00`),
+      $lte: new Date(`${date}T23:59:59`),
+    },
+    status: { $ne: "cancelled" }, // Only consider non-cancelled appointments
   });
 
+  // Create a Set of booked start times for quick lookup
   const bookedTimes = new Set(
-    booked.map((b) => new Date(b.startTime).getTime()),
+    bookedAppointments.map((b) => new Date(b.startTime).getTime()),
   );
 
-  const availableSlots = slots.filter(
-    (slot) => !bookedTimes.has(new Date(slot.startTime).getTime()),
-  );
+  // Mark slots as booked
+  const allSlotsWithStatus = slots.map((slot) => ({
+    ...slot,
+    isBooked: bookedTimes.has(new Date(slot.startTime).getTime()),
+  }));
 
   return res.status(httpStatus.OK).json({
     success: true,
-    slots: availableSlots,
+    slots: allSlotsWithStatus,
+    summary: {
+      totalSlots: allSlotsWithStatus.length,
+      availableSlots: allSlotsWithStatus.filter((s) => !s.isBooked).length,
+      bookedSlots: allSlotsWithStatus.filter((s) => s.isBooked).length,
+    },
   });
 };
 

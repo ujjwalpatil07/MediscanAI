@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     Calendar,
@@ -17,7 +17,7 @@ import {
     User as UserIcon
 } from "lucide-react";
 import { dummyAppointments } from "../../utils/data";
-import { usePatientContext } from "../../context/PatientContext";
+import AuthContext from "../../context/AuthContext";
 
 
 const statusConfig = {
@@ -41,7 +41,7 @@ const statusConfig = {
 export default function MyAppointmentsPage() {
     const navigate = useNavigate();
 
-    const { loginPatient } = usePatientContext(); 
+    const { loginUser } = useContext(AuthContext);
 
     const [appointments, setAppointments] = useState([]);
     const [activeTab, setActiveTab] = useState("upcoming");
@@ -49,7 +49,7 @@ export default function MyAppointmentsPage() {
     const [typeFilter, setTypeFilter] = useState("all");
     const [showCancelModal, setShowCancelModal] = useState(null);
 
-    const userId = loginPatient?._id;
+    const userId = loginUser?._id;
 
     // Load appointments
     useEffect(() => {
@@ -275,7 +275,7 @@ export default function MyAppointmentsPage() {
                                     </div>
 
                                     {/* Patient Info - For family member bookings */}
-                                    {appointment.patientName && appointment.patientName !== `${loginPatient?.firstName} ${loginPatient?.lastName}` && (
+                                    {appointment.patientName && appointment.patientName !== `${loginUser?.firstName} ${loginUser?.lastName}` && (
                                         <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-2">
                                             <UserIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
                                             <p className="text-xs text-green-700 dark:text-green-300">
@@ -396,7 +396,7 @@ export default function MyAppointmentsPage() {
                         <p className="text-gray-600 dark:text-gray-400 mb-2">
                             Are you sure you want to cancel your appointment with <strong>{showCancelModal.doctorName}</strong>?
                         </p>
-                        {showCancelModal.patientName && showCancelModal.patientName !== `${loginPatient?.firstName} ${loginPatient?.lastName}` && (
+                        {showCancelModal.patientName && showCancelModal.patientName !== `${loginUser?.firstName} ${loginUser?.lastName}` && (
                             <p className="text-sm text-orange-600 dark:text-orange-400 mb-2">
                                 Note: This appointment was booked for {showCancelModal.patientName}.
                             </p>
