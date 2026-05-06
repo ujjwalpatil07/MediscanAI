@@ -23,11 +23,14 @@ import {
   ToggleLeft,
   ToggleRight,
 } from "lucide-react";
+import { useContext } from "react";
+import {useNavigate} from "react-router-dom"
+import AuthContext from "../../context/AuthContext";
 
 const settingsSections = [
   {
-    id: "profile",
-    label: "Profile Settings",
+    id: "account",
+    label: "Account Settings",
     icon: User,
     description: "Manage your personal and professional information",
   },
@@ -64,26 +67,28 @@ const settingsSections = [
 ];
 
 export default function DoctorSettings() {
-  const [activeSection, setActiveSection] = useState("profile");
+  const [activeSection, setActiveSection] = useState("account");
   const [saveStatus, setSaveStatus] = useState(null);
+  const { loginUser } = useContext(AuthContext)
+  const navigate = useNavigate();
 
-  const [profileSettings, setProfileSettings] = useState({
-    firstName: "Stephen",
-    lastName: "Conley",
-    email: "dr.stephen@mediscanai.com",
-    phone: "(704) 555-0127",
-    specialty: "Cardiology",
-    licenseNumber: "SSBB454D4HDER787",
-    experience: "15",
-    degree: "MD - Cardiology",
-    consultationFee: "500",
-    bio: "Experienced cardiologist specializing in interventional cardiology and heart disease management.",
-    clinicName: "Conley Heart Care Center",
-    clinicAddress: "1st Floor, Lotus Medical Complex, MG Road, Andheri West",
-    clinicCity: "Mumbai",
-    clinicState: "Maharashtra",
-    clinicPincode: "400053",
-  });
+  // const [profileSettings, setProfileSettings] = useState({
+  //   firstName: "Stephen",
+  //   lastName: "Conley",
+  //   email: "dr.stephen@mediscanai.com",
+  //   phone: "(704) 555-0127",
+  //   specialty: "Cardiology",
+  //   licenseNumber: "SSBB454D4HDER787",
+  //   experience: "15",
+  //   degree: "MD - Cardiology",
+  //   consultationFee: "500",
+  //   bio: "Experienced cardiologist specializing in interventional cardiology and heart disease management.",
+  //   clinicName: "Conley Heart Care Center",
+  //   clinicAddress: "1st Floor, Lotus Medical Complex, MG Road, Andheri West",
+  //   clinicCity: "Mumbai",
+  //   clinicState: "Maharashtra",
+  //   clinicPincode: "400053",
+  // });
 
   const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
@@ -169,213 +174,40 @@ export default function DoctorSettings() {
     </button>
   );
 
-  const renderProfileSettings = () => (
+  const renderAccountSettings = () => (
     <div className="space-y-6">
       <div className="flex items-center gap-4 mb-6">
         <div className="relative">
-          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-            <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-              SC
-            </span>
-          </div>
-          <button className="absolute bottom-0 right-0 p-1.5 bg-white dark:bg-neutral-700 rounded-full shadow-md hover:shadow-lg transition">
-            <Camera className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-          </button>
+          {loginUser?.profilePhoto ? (
+            <img
+              src={loginUser.profilePhoto}
+              alt="Profile"
+              className="w-20 h-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {loginUser?.firstName?.[0]}{loginUser?.lastName?.[0]}
+              </span>
+            </div>
+          )}
         </div>
         <div>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Profile Photo
+            {loginUser?.firstName} {loginUser?.lastName}
           </h4>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Upload a professional photo. Max size 2MB.
+            {loginUser?.specialty || "Specialty not set"}
           </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            First Name
-          </label>
-          <input
-            type="text"
-            value={profileSettings.firstName}
-            onChange={(e) =>
-              setProfileSettings({ ...profileSettings, firstName: e.target.value })
-            }
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Last Name
-          </label>
-          <input
-            type="text"
-            value={profileSettings.lastName}
-            onChange={(e) =>
-              setProfileSettings({ ...profileSettings, lastName: e.target.value })
-            }
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            value={profileSettings.email}
-            onChange={(e) =>
-              setProfileSettings({ ...profileSettings, email: e.target.value })
-            }
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Phone
-          </label>
-          <input
-            type="tel"
-            value={profileSettings.phone}
-            onChange={(e) =>
-              setProfileSettings({ ...profileSettings, phone: e.target.value })
-            }
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Specialty
-          </label>
-          <select
-            value={profileSettings.specialty}
-            onChange={(e) =>
-              setProfileSettings({ ...profileSettings, specialty: e.target.value })
-            }
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {loginUser?.email}
+          </p>
+          <button
+            onClick={() => navigate("/d/profile")}
+            className="text-sm text-green-600 dark:text-green-400 hover:underline mt-1"
           >
-            <option>Cardiology</option>
-            <option>Dermatology</option>
-            <option>Neurology</option>
-            <option>Orthopedics</option>
-            <option>Pediatrics</option>
-            <option>General Medicine</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            License Number
-          </label>
-          <input
-            type="text"
-            value={profileSettings.licenseNumber}
-            onChange={(e) =>
-              setProfileSettings({ ...profileSettings, licenseNumber: e.target.value })
-            }
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Years of Experience
-          </label>
-          <input
-            type="number"
-            value={profileSettings.experience}
-            onChange={(e) =>
-              setProfileSettings({ ...profileSettings, experience: e.target.value })
-            }
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Consultation Fee (₹)
-          </label>
-          <input
-            type="number"
-            value={profileSettings.consultationFee}
-            onChange={(e) =>
-              setProfileSettings({ ...profileSettings, consultationFee: e.target.value })
-            }
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Bio
-        </label>
-        <textarea
-          value={profileSettings.bio}
-          onChange={(e) =>
-            setProfileSettings({ ...profileSettings, bio: e.target.value })
-          }
-          rows={3}
-          className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-        />
-      </div>
-
-      <div>
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-          Clinic Information
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Clinic Name
-            </label>
-            <input
-              type="text"
-              value={profileSettings.clinicName}
-              onChange={(e) =>
-                setProfileSettings({ ...profileSettings, clinicName: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Address
-            </label>
-            <input
-              type="text"
-              value={profileSettings.clinicAddress}
-              onChange={(e) =>
-                setProfileSettings({ ...profileSettings, clinicAddress: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              City
-            </label>
-            <input
-              type="text"
-              value={profileSettings.clinicCity}
-              onChange={(e) =>
-                setProfileSettings({ ...profileSettings, clinicCity: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              State
-            </label>
-            <input
-              type="text"
-              value={profileSettings.clinicState}
-              onChange={(e) =>
-                setProfileSettings({ ...profileSettings, clinicState: e.target.value })
-              }
-              className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
-            />
-          </div>
+            Edit profile details
+          </button>
         </div>
       </div>
 
@@ -428,20 +260,106 @@ export default function DoctorSettings() {
         </div>
       </div>
 
+      <div className="pt-4 border-t border-gray-200 dark:border-neutral-700">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+          Account Information
+        </h4>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-neutral-700/50">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Account Status</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {loginUser?.isActive ? "Active" : "Inactive"}
+              </p>
+            </div>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${loginUser?.isActive
+              ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+              : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+              }`}>
+              {loginUser?.isActive ? "Active" : "Inactive"}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-neutral-700/50">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Verification Status</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {loginUser?.isVerified ? "Verified" : "Pending Verification"}
+              </p>
+            </div>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${loginUser?.isVerified
+              ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+              : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"
+              }`}>
+              {loginUser?.isVerified ? "Verified" : "Pending"}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-neutral-700/50">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Profile Completion</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Complete your profile for better visibility
+              </p>
+            </div>
+            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+              {loginUser?.profileCompletion || 0}%
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-neutral-700/50">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Member Since</p>
+            </div>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {new Date(loginUser?.joinedDate).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-gray-200 dark:border-neutral-700">
+        <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-4">
+          Danger Zone
+        </h4>
+        <div className="space-y-3">
+          <button className="w-full flex items-center justify-between p-3 rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+            <div className="text-left">
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">Deactivate Account</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Temporarily disable your account
+              </p>
+            </div>
+          </button>
+          <button className="w-full flex items-center justify-between p-3 rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+            <div className="text-left">
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">Delete Account</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Permanently delete your account and all data
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <div className="flex justify-end">
         <button
-          onClick={() => handleSave("profile")}
+          onClick={() => handleSave("password")}
           disabled={saveStatus?.status === "saving"}
           className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium disabled:opacity-60"
         >
-          {saveStatus?.section === "profile" && saveStatus?.status === "saving" ? (
+          {saveStatus?.section === "password" && saveStatus?.status === "saving" ? (
             "Saving..."
-          ) : saveStatus?.section === "profile" && saveStatus?.status === "saved" ? (
+          ) : saveStatus?.section === "password" && saveStatus?.status === "saved" ? (
             "Saved!"
           ) : (
             <>
               <Save className="w-4 h-4" />
-              Save Changes
+              Update Password
             </>
           )}
         </button>
@@ -987,8 +905,8 @@ export default function DoctorSettings() {
 
   const renderSectionContent = () => {
     switch (activeSection) {
-      case "profile":
-        return renderProfileSettings();
+      case "account":
+        return renderAccountSettings();
       case "notifications":
         return renderNotificationSettings();
       case "appointments":
@@ -1026,8 +944,8 @@ export default function DoctorSettings() {
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${activeSection === section.id
-                        ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-700"
+                      ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-700"
                       }`}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />

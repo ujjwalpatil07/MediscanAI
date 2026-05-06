@@ -108,8 +108,6 @@ export default function LoginForm() {
       }
 
       const { token, user } = response.data;
-      console.log(user);
-
       localStorage.setItem("token", token);
 
       if (rememberMe) {
@@ -120,11 +118,12 @@ export default function LoginForm() {
 
       setLoginUser(user);
 
-      enqueueSnackbar(`Welcome back, ${user.firstName}!`, {
+      const welcomeName = user?.role === "patient" ? user?.firstName : `Dr ${user?.firstName}`;
+      enqueueSnackbar(`Welcome back, ${welcomeName}!`, {
         variant: "success",
       });
 
-      navigate(`/`);
+      user?.role == "patient" ? navigate(`/`) : navigate(`/d/dashboard`);
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Login failed. Please try again.";

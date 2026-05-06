@@ -16,17 +16,16 @@ import { useDebounce } from "use-debounce";
 import { filterByQuery } from "../../utils/searchUtils";
 import doctorPatientImage from "../../../../assets/doctor_patient.png";
 import Logo from "../logo/Logo";
+import { Earth, LogIn, LucideStethoscope, Phone, Users, UserSearch } from "lucide-react";
 
 /** ✅ ONLY VALID ROUTES */
 const quickLinks = [
   { id: 1, title: "Home", path: "/home", icon: <FaHome className="mr-2" /> },
   { id: 2, title: "Find Doctors", path: "/doctors", icon: <FaUserMd className="mr-2" /> },
-  { id: 3, title: "Patient Dashboard", path: "/p/dashboard", icon: <FaUserInjured className="mr-2" /> },
-  { id: 4, title: "Book Appointment", path: "/doctors", icon: <FaCalendarAlt className="mr-2" /> },
-  { id: 5, title: "My Appointments", path: "/p/my-appointments", icon: <FaClipboardList className="mr-2" /> },
-  { id: 6, title: "Symptom Checker", path: "/p/symptom-checker", icon: <FaBrain className="mr-2" /> },
-  { id: 7, title: "Prescriptions", path: "/p/prescriptions", icon: <FaNotesMedical className="mr-2" /> },
-  { id: 8, title: "Profile", path: "/p/profile", icon: <FaUserInjured className="mr-2" /> },
+  { id: 3, title: "Book Appointment", path: "/doctors", icon: <FaCalendarAlt className="mr-2" /> },
+  { id: 4, title: "Symptom Checker", path: "/p/symptom-checker", icon: <FaBrain className="mr-2" /> },
+  { id: 5, title: "About Us", path: "/about", icon: <UserSearch className="mr-2" /> },
+  { id: 6, title: "Contact Us", path: "/contact", icon: <Phone className="mr-2" /> },
 ];
 
 export default function NotFoundPage() {
@@ -71,17 +70,17 @@ export default function NotFoundPage() {
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/login")}
                 className="px-5 py-2 bg-green-600 text-white rounded-lg flex items-center justify-center hover:bg-green-700 transition"
               >
-                <FaHome className="mr-2" /> Go to Landing
+                <LogIn className="mr-2" /> Be part of us now!
               </button>
 
               <button
-                onClick={() => navigate("/p/dashboard")}
+                onClick={() => navigate("/")}
                 className="px-5 py-2 border border-green-600 text-green-700 rounded-lg flex items-center justify-center hover:bg-green-50 dark:hover:bg-neutral-800 transition"
               >
-                <FaUserInjured className="mr-2" /> Dashboard
+                <Earth className="mr-2" /> Explore us
               </button>
             </div>
 

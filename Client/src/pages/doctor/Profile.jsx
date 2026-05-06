@@ -12,8 +12,6 @@ import {
   TrendingUp,
   CheckCircle,
   Edit,
-  Camera,
-  Heart,
   ThumbsUp,
   MessageCircle,
   Activity,
@@ -21,12 +19,10 @@ import {
   UserPlus,
   Settings,
   Building2,
-  Languages,
   BadgeCheck,
   Quote,
   IndianRupee,
   Share2,
-  Plus,
 } from "lucide-react";
 import AuthContext from "../../context/AuthContext";
 import EditProfileModal from "../../components/doctor/profile/EditProfileModal";
@@ -101,23 +97,19 @@ export default function DoctorProfile() {
   };
 
   const renderStars = (rating) => {
-    return [...Array(5)].map((_, i) => (
+    return Array.from({ length: 5 }, (_, i) => (
       <Star
-        key={i}
+        key={i * 0.5}
         className={`w-4 h-4 ${i < Math.round(rating)
-            ? "fill-yellow-400 text-yellow-400"
-            : "text-gray-300 dark:text-gray-600"
+          ? "fill-yellow-400 text-yellow-400"
+          : "text-gray-300 dark:text-gray-600"
           }`}
       />
     ));
   };
 
-  const getInitials = () => {
-    return `${loginUser.firstName?.[0] || ""}${loginUser.lastName?.[0] || ""}`;
-  };
-
   const getFullName = () => {
-    return `Dr. ${loginUser.firstName || ""} ${loginUser.lastName || ""}`;
+    return `Dr. ${loginUser?.firstName || ""} ${loginUser?.lastName || ""}`;
   };
 
   const renderOverview = () => (
@@ -136,66 +128,66 @@ export default function DoctorProfile() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Specialty</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Specialty</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {loginUser.specialty || "Not set"}
+                  {loginUser?.specialty || "Not set"}
                 </p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Sub Specialty</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Sub Specialty</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {loginUser.subSpecialty || "Not set"}
+                  {loginUser?.subSpecialty || "Not set"}
                 </p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Medical Degree</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Medical Degree</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {loginUser.medicalDegree || "Not set"}
+                  {loginUser?.medicalDegree || "Not set"}
                 </p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">License Number</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400">License Number</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white font-mono">
-                  {loginUser.licenseNumber || "Not set"}
+                  {loginUser?.licenseNumber || "Not set"}
                 </p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">University</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400">University</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {loginUser.university || "Not set"}
+                  {loginUser?.university || "Not set"}
                 </p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Experience</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Experience</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {loginUser.yearsOfExperience || 0} Years
+                  {loginUser?.yearsOfExperience || 0} Years
                 </p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Consultation Fee</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Consultation Fee</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1">
                   <IndianRupee className="w-4 h-4" />
-                  {loginUser.consultationFee || 0}
+                  {loginUser?.consultationFee || 0}
                 </p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Languages</label>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Languages</span>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {loginUser.languages?.length > 0
+                  {loginUser?.languages?.length > 0
                     ? loginUser.languages.join(", ")
                     : "Not set"}
                 </p>
               </div>
             </div>
 
-            {loginUser.certifications?.length > 0 && (
+            {loginUser?.certifications?.length > 0 && (
               <div className="mt-6 pt-6 border-t border-gray-100 dark:border-neutral-700">
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                   Certifications
                 </h4>
                 <div className="space-y-2">
-                  {loginUser.certifications.map((cert, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  {loginUser?.certifications.map((cert, index) => (
+                    <div key={index * 0.5} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Award className="w-4 h-4 text-amber-500 flex-shrink-0" />
                       {cert}
                     </div>
@@ -204,14 +196,14 @@ export default function DoctorProfile() {
               </div>
             )}
 
-            {loginUser.memberships?.length > 0 && (
+            {loginUser?.memberships?.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                   Professional Memberships
                 </h4>
                 <div className="space-y-2">
-                  {loginUser.memberships.map((member, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  {loginUser?.memberships.map((member, index) => (
+                    <div key={index * 0.5} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Building2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
                       {member}
                     </div>
@@ -221,7 +213,7 @@ export default function DoctorProfile() {
             )}
           </div>
 
-          {loginUser.clinicName && (
+          {loginUser?.clinicName && (
             <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-100 dark:border-neutral-700 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -237,37 +229,37 @@ export default function DoctorProfile() {
                   <Building2 className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {loginUser.clinicName}
+                      {loginUser?.clinicName}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {loginUser.clinicAddress}
-                      {loginUser.clinicCity && `, ${loginUser.clinicCity}`}
-                      {loginUser.clinicState && `, ${loginUser.clinicState}`}
-                      {loginUser.clinicPincode && ` - ${loginUser.clinicPincode}`}
+                      {loginUser?.clinicAddress}
+                      {loginUser?.clinicCity && `, ${loginUser?.clinicCity}`}
+                      {loginUser?.clinicState && `, ${loginUser?.clinicState}`}
+                      {loginUser?.clinicPincode && ` - ${loginUser?.clinicPincode}`}
                     </p>
                   </div>
                 </div>
-                {loginUser.clinicPhone && (
+                {loginUser?.clinicPhone && (
                   <div className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-gray-400" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{loginUser.clinicPhone}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{loginUser?.clinicPhone}</p>
                   </div>
                 )}
-                {loginUser.clinicEmail && (
+                {loginUser?.clinicEmail && (
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-gray-400" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{loginUser.clinicEmail}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{loginUser?.clinicEmail}</p>
                   </div>
                 )}
-                {loginUser.clinicWebsite && (
+                {loginUser?.clinicWebsite && (
                   <div className="flex items-center gap-3">
                     <Globe className="w-5 h-5 text-gray-400" />
-                    <p className="text-sm text-blue-600 dark:text-blue-400">{loginUser.clinicWebsite}</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">{loginUser?.clinicWebsite}</p>
                   </div>
                 )}
               </div>
 
-              {loginUser.clinicTimings && (
+              {loginUser?.clinicTimings && (
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
                   <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                     Clinic Timings
@@ -304,11 +296,11 @@ export default function DoctorProfile() {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Rating</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {loginUser.rating || 0} / 5
+                      {loginUser?.rating || 0} / 5
                     </p>
                   </div>
                 </div>
-                <span className="text-sm text-gray-400">{loginUser.totalReviews || 0} reviews</span>
+                <span className="text-sm text-gray-400">{loginUser?.totalReviews || 0} reviews</span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -347,7 +339,7 @@ export default function DoctorProfile() {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Success Rate</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {loginUser.successRate || 0}%
+                      {loginUser?.successRate || 0}%
                     </p>
                   </div>
                 </div>
@@ -361,7 +353,7 @@ export default function DoctorProfile() {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Publications</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {loginUser.publications || 0}
+                      {loginUser?.publications || 0}
                     </p>
                   </div>
                 </div>
@@ -375,7 +367,7 @@ export default function DoctorProfile() {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Awards</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {loginUser.awards || 0}
+                      {loginUser?.awards || 0}
                     </p>
                   </div>
                 </div>
@@ -398,15 +390,15 @@ export default function DoctorProfile() {
             <div className="flex items-center gap-2 mt-1">
               <div className="flex">{renderStars(loginUser.rating || 0)}</div>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {loginUser.rating || 0} out of 5 ({loginUser.totalReviews || 0} reviews)
+                {loginUser?.rating || 0} out of 5 ({loginUser?.totalReviews || 0} reviews)
               </span>
             </div>
           </div>
         </div>
 
-        {loginUser.reviews?.length > 0 ? (
+        {loginUser?.reviews?.length > 0 ? (
           <div className="space-y-6">
-            {loginUser.reviews.map((review, index) => (
+            {loginUser?.reviews.map((review, index) => (
               <div
                 key={review._id || index}
                 className="border-b border-gray-100 dark:border-neutral-700 pb-6 last:border-0 last:pb-0"
@@ -474,9 +466,9 @@ export default function DoctorProfile() {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
           Recent Activity
         </h3>
-        {loginUser.recentActivity?.length > 0 ? (
+        {loginUser?.recentActivity?.length > 0 ? (
           <div className="space-y-4">
-            {loginUser.recentActivity.map((act, index) => (
+            {loginUser?.recentActivity.map((act, index) => (
               <div key={act._id || index} className="flex items-start gap-4">
                 <div className={`p-2 rounded-full ${getActivityColor(act.icon)}`}>
                   {getActivityIcon(act.icon)}
@@ -532,18 +524,18 @@ export default function DoctorProfile() {
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {getFullName()}
                 </h3>
-                {loginUser.isVerified && (
+                {loginUser?.isVerified && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium">
                     <CheckCircle className="w-3.5 h-3.5" /> Verified
                   </span>
                 )}
               </div>
               <p className="text-green-600 dark:text-green-400 font-medium mt-1">
-                {loginUser.specialty || "Specialty not set"}
+                {loginUser?.specialty || "Specialty not set"}
               </p>
-              {loginUser.bio ? (
+              {loginUser?.bio ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-2xl">
-                  {loginUser.bio}
+                  {loginUser?.bio}
                 </p>
               ) : (
                 <p className="text-sm text-gray-400 dark:text-gray-500 mt-2 italic">
@@ -558,18 +550,18 @@ export default function DoctorProfile() {
                 <div className="flex items-center gap-1">
                   {renderStars(loginUser.rating || 0)}
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
-                    {loginUser.rating || 0}
+                    {loginUser?.rating || 0}
                   </span>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    ({loginUser.totalReviews || 0} reviews)
+                    ({loginUser?.totalReviews || 0} reviews)
                   </span>
                 </div>
-                {loginUser.clinicCity && (
+                {loginUser?.clinicCity && (
                   <>
                     <span className="text-gray-300 dark:text-gray-600">|</span>
                     <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                       <MapPin className="w-4 h-4" />
-                      {loginUser.clinicCity}{loginUser.clinicState ? `, ${loginUser.clinicState}` : ""}
+                      {loginUser?.clinicCity}{loginUser?.clinicState ? `, ${loginUser?.clinicState}` : ""}
                     </div>
                   </>
                 )}
@@ -593,7 +585,7 @@ export default function DoctorProfile() {
             <div className="text-center">
               <div className="w-20 h-20 rounded-full border-4 border-green-500 flex items-center justify-center mx-auto">
                 <span className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {loginUser.profileCompletion || 0}%
+                  {loginUser?.profileCompletion || 0}%
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -610,8 +602,8 @@ export default function DoctorProfile() {
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={`px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition ${activeTab === tab.value
-                    ? "border-green-600 text-green-600 dark:text-green-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  ? "border-green-600 text-green-600 dark:text-green-400"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                   }`}
               >
                 {tab.label}

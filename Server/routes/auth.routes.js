@@ -18,7 +18,6 @@ router.post("/patient/login", wrapAsync(patientLogin));
 
 router.post("/doctor/signup", validateDoctorSignup, wrapAsync(doctorSignup));
 router.post("/doctor/login", wrapAsync(doctorLogin));
-// Add this route
 router.put("/doctor/update-profile", authMiddleware, wrapAsync(updateDoctorProfile));
 
 router.get("/me", authMiddleware, wrapAsync(getCurrentUser));

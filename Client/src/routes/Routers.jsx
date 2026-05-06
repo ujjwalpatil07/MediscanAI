@@ -28,13 +28,12 @@ import DoctorPatients from "../pages/doctor/Patients";
 import DoctorPayments from "../pages/doctor/Payments";
 import DoctorMessages from "../pages/doctor/Messages";
 import DoctorProfile from "../pages/doctor/Profile";
-// import DoctorSchedule from "../pages/doctor/Schedule";
 import DoctorSettings from "../pages/doctor/Settings";
 import DoctorLayout from "../layouts/DoctorLayout";
 import PatientDetail from "../pages/doctor/PatientDetail";
 import Blog from "../pages/doctor/Blog";
-// import DoctorConsultation from "../pages/doctor/Consultation";
-// import DoctorChat from "../pages/doctor/Chat";
+import AboutUs from "../pages/AboutUs";
+import ContactUs from "../pages/ContactUs";
 
 export default function Routers() {
 
@@ -48,9 +47,11 @@ export default function Routers() {
     <Routes>
       <Route path="/" element={<PatientLayout><LandingPage /></PatientLayout>} />
       <Route path="/home" element={<PatientLayout><HomePage /></PatientLayout>} />
-
+      <Route path="/about" element={<PatientLayout><AboutUs /></PatientLayout>} />
+      <Route path="/contact" element={<PatientLayout><ContactUs /></PatientLayout>} />
 
       <Route path="/login" element={<RoleSelector />} />
+      <Route path="/signup" element={<RoleSelector />} />
       <Route path="/:role/login" element={<Login />} />
       <Route path="/patient/signup" element={<PatientSignup />} />
       <Route path="/doctor/signup" element={<DoctorSignup />} />
@@ -116,7 +117,10 @@ export default function Routers() {
         <Route path="/d/prescriptions" element={<DoctorMessages />} />
         <Route path="/d/prescriptions/new/:patientId" element={<DoctorMessages />} />
         <Route path="/d/prescriptions/:id" element={<DoctorMessages />} />
+
       </Route>
+
+      <Route path="*" element={<PatientLayout><NotFound /></PatientLayout>} />
     </Routes>
   );
 }

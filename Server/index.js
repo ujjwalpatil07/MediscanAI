@@ -18,6 +18,7 @@ import uploadRoutes from "./routes/upload.routes.js";
 
 import { connectDB } from "./config/initDB.js";
 import { corsOptions } from "./config/cors.js";
+import compression from "compression";
 
 dotenv.config();
 

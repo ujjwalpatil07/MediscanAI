@@ -10,12 +10,15 @@ import {
   Sun,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import AuthContext from "../../context/AuthContext";
 
 export default function DoctorNavbar({ onMenuClick }) {
   const [darkMode, setDarkMode] = useState(
     document.documentElement.classList.contains("dark")
   );
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
+  const {loginUser} = useContext(AuthContext)
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -35,7 +38,7 @@ export default function DoctorNavbar({ onMenuClick }) {
 
           <div className="hidden sm:flex items-center gap-2">
             <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-              Welcome, Dr. Stephen
+              Welcome, Dr. {loginUser?.firstName}
             </h1>
             <span className="hidden md:inline text-sm text-gray-500 dark:text-gray-400">
               Have a nice day at great work
