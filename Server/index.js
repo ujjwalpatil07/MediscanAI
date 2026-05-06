@@ -5,7 +5,14 @@ import http from "node:http";
 
 import { initSocket } from "./sockets/index.js";
 
-import authRoutes from '../Server/routes/authRoutes.js'
+import patientProfileRoutes from "./routes/patient/profile.routes.js";
+import appointmentRoutes from "./routes/patient/appointment.routes.js";
+import prescriptionRoutes from "./routes/patient/prescription.routes.js";
+import medicalRecordRoutes from "./routes/patient/medicalRecord.routes.js";
+import aiRoutes from "./routes/patient/ai.routes.js";
+
+
+import authRoutes from './routes/auth.routes.js'
 import uploadRoutes from "./routes/upload.routes.js";
 
 
@@ -20,7 +27,6 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
-app.use(compression());
 connectDB();
 
 const server = http.createServer(app);
@@ -30,6 +36,14 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
+
+// ------------------- PATIENT ROUTES -----------------------
+app.use("/p/profile", patientProfileRoutes);
+app.use("/p/appointment", appointmentRoutes);
+app.use("/p/prescription", prescriptionRoutes);
+app.use("/p/medical-record", medicalRecordRoutes);
+app.use("/p/ai", aiRoutes);
+
 
 app.use("/auth", authRoutes);
 app.use("/upload", uploadRoutes);

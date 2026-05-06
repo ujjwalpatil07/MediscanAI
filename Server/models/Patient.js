@@ -59,12 +59,6 @@ const patientSchema = new mongoose.Schema(
         ref: "Appointment",
       },
     ],
-    prescriptions: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Prescription",
-      },
-    ],
 
     bloodGroup: {
       type: String,
@@ -79,15 +73,6 @@ const patientSchema = new mongoose.Schema(
       {
         name: String,
         dosage: String,
-      },
-    ],
-
-    // 🔹 Medical Info
-    medicalHistory: [
-      {
-        condition: String,
-        diagnosedDate: Date,
-        notes: String,
       },
     ],
 
