@@ -29,7 +29,6 @@ export const AuthProvider = ({ children }) => {
                 const user = res?.data?.user || null;
                 setLoginUser(user);
             } catch (err) {
-                // Only logout on auth-related errors
                 const status = err?.response?.status;
                 if (status === 401 || status === 403) {
                     enqueueSnackbar("Session expired. Please login again.", {

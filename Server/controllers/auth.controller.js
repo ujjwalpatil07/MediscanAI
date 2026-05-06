@@ -74,22 +74,6 @@ export const patientLogin = async (req, res) => {
   });
 };
 
-export const getCurrentPatient = async (req, res) => {
-  const patient = await Patient.findById(req.user.id).select("-password");
-
-  if (!patient) {
-    return res.status(404).json({
-      success: false,
-      message: "Patient not found",
-    });
-  }
-
-  res.status(200).json({
-    success: true,
-    user: patient,
-  });
-};
-
 export const doctorSignup = async (req, res) => {
   const {
     email,
@@ -194,22 +178,6 @@ export const doctorLogin = async (req, res) => {
       email: doctor.email,
       role: "doctor",
     },
-  });
-};
-
-export const getCurrentDoctor = async (req, res) => {
-  const doctor = await Doctor.findById(req.user.id).select("-password");
-
-  if (!doctor) {
-    return res.status(404).json({
-      success: false,
-      message: "Doctor not found",
-    });
-  }
-
-  res.status(200).json({
-    success: true,
-    user: doctor,
   });
 };
 

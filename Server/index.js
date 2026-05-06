@@ -5,12 +5,13 @@ import http from "node:http";
 
 import { initSocket } from "./sockets/index.js";
 
-import authRoutes from '../Server/routes/authRoutes.js'
+import authRoutes from './routes/auth.routes.js'
 import uploadRoutes from "./routes/upload.routes.js";
 
 
 import { connectDB } from "./config/initDB.js";
 import { corsOptions } from "./config/cors.js";
+import compression from "compression";
 
 dotenv.config();
 

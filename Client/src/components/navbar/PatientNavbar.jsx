@@ -23,7 +23,9 @@ import {
   Brain,
   LayoutDashboard,
   FileText,
-  Folder
+  Folder,
+  Phone,
+  UserSearch
 } from "lucide-react";
 
 import { useState } from "react";
@@ -33,10 +35,15 @@ import CustomMenu from "../common/CustomMenu";
 import CustomDrawer from "../common/CustomDrawer";
 import { useThemeContext } from "../../context/ThemeContext";
 import { usePatientContext } from "../../context/PatientContext";
+import { useContext } from "react";
+import AuthContext from "../../context/AuthContext";
 
 const publicLinks = [
-  { title: "Home", path: "/", icon: <Home size={18} /> },
+  { title: "Home", path: "/home", icon: <Home size={18} /> },
   { title: "Doctors", path: "/doctors", icon: <Stethoscope size={18} /> },
+  { title: "About us", path: "/about", icon: <UserSearch size={18} /> },
+  { title: "Contact us", path: "/contact", icon: <Phone size={18} /> }
+
 ];
 
 const patientLinks = [
@@ -53,13 +60,17 @@ const patientLinks = [
 export default function Navbar() {
   const location = useLocation();
   const { toggleTheme } = useThemeContext();
-  const { loginPatient } = usePatientContext();
+  const { loginUser } = useContext(AuthContext);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const links = loginPatient ? patientLinks : publicLinks;
+  const links = (loginUser && loginUser?.role == "patient") ? patientLinks : publicLinks;
+  let loginPatient;
 
+  if ((loginUser && loginUser?.role == "patient")) {
+    loginPatient = loginUser
+  }
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
@@ -98,7 +109,7 @@ export default function Navbar() {
                 className="hidden md:flex items-center gap-3"
               >
                 <span className="text-gray-600 dark:text-white text-sm font-semibold">
-                  Hi, {loginPatient.firstName}
+                  Hi, {loginUser.firstName}
                 </span>
                 <Avatar
                   src={loginPatient?.image}
@@ -118,11 +129,11 @@ export default function Navbar() {
                 </Button>
                 <Button
                   component={Link}
-                  to="/register"
+                  to="/login"
                   variant="contained"
                   className="!bg-green-600 hover:!bg-green-700"
                 >
-                  Sign Up
+                  Register
                 </Button>
               </div>
             )}
@@ -201,11 +212,11 @@ export default function Navbar() {
               </Button>
               <Button
                 component={Link}
-                to="/register"
+                to="/login"
                 variant="contained"
                 onClick={() => setDrawerOpen(false)}
               >
-                Sign Up
+                Register
               </Button>
             </div>
           )}

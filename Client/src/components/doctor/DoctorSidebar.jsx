@@ -63,19 +63,13 @@ const menuItems = [
 
 export default function DoctorSidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const {loginUser} = useContext(AuthContext)
+  const {loginUser, logout} = useContext(AuthContext)
 
   const isActive = (path) => {
     if (path === "/d/dashboard") {
       return location.pathname === path;
     }
     return location.pathname.startsWith(path);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/doctor/login");
   };
 
   return (
@@ -185,13 +179,13 @@ export default function DoctorSidebar({ isOpen, onClose, collapsed, onToggleColl
             )}
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={logout}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition w-full mt-1 ${collapsed ? "justify-center" : ""
               }`}
             title={collapsed ? "Logout" : ""}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span className="text-sm">Logout</span>}
+            {!collapsed && <span className="text-sm" >Logout</span>}
           </button>
         </div>
       </aside>

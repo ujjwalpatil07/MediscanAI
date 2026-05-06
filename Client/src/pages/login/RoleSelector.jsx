@@ -23,15 +23,15 @@ const roles = [
     highlight: "from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-900/10",
     decorator: <Stethoscope className="absolute -bottom-2 -right-2 text-green-300 dark:text-green-700 w-16 h-16" />
   },
-  {
-    title: "Admin",
-    path: "/admin/login",
-    icon: <Shield size={40} className="text-purple-500" />,
-    description: "Manage hospital systems and staff",
-    bgClass: "bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-700",
-    highlight: "from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-900/10",
-    decorator: <ClipboardList className="absolute -bottom-2 -right-2 text-purple-300 dark:text-purple-700 w-16 h-16" />
-  },
+  // {
+  //   title: "Admin",
+  //   path: "/admin/login",
+  //   icon: <Shield size={40} className="text-purple-500" />,
+  //   description: "Manage hospital systems and staff",
+  //   bgClass: "bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-700",
+  //   highlight: "from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-900/10",
+  //   decorator: <ClipboardList className="absolute -bottom-2 -right-2 text-purple-300 dark:text-purple-700 w-16 h-16" />
+  // },
 ];
 
 const generateMedicalDecorations = (isDark) => {
@@ -111,7 +111,7 @@ export default function RoleSelector() {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-4xl mx-auto text-center">
+      <div className="relative z-10 w-full max-w-3xl mx-auto text-center">
 
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -128,7 +128,7 @@ export default function RoleSelector() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {roles.map((role, index) => (
             <motion.div
               key={role.title}

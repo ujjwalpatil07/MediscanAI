@@ -2,10 +2,8 @@ import express from "express";
 import {
   patientSignup,
   patientLogin,
-  getCurrentPatient,
   doctorSignup,
   doctorLogin,
-  getCurrentDoctor,
   getCurrentUser,
   updateDoctorProfile,
 } from "../controllers/auth.controller.js";
@@ -17,12 +15,9 @@ const router = express.Router();
 
 router.post("/patient/signup", wrapAsync(patientSignup));
 router.post("/patient/login", wrapAsync(patientLogin));
-router.get("/patient/me", authMiddleware, wrapAsync(getCurrentPatient));
 
 router.post("/doctor/signup", validateDoctorSignup, wrapAsync(doctorSignup));
 router.post("/doctor/login", wrapAsync(doctorLogin));
-router.get("/doctor/me", authMiddleware, wrapAsync(getCurrentDoctor));
-// Add this route
 router.put("/doctor/update-profile", authMiddleware, wrapAsync(updateDoctorProfile));
 
 router.get("/me", authMiddleware, wrapAsync(getCurrentUser));
