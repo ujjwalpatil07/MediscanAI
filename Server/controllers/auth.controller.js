@@ -90,7 +90,6 @@ export const doctorSignup = async (req, res) => {
     consultationFee,
   } = req.body;
 
-  // console.log("hii");
 
   // Check existing doctor
   const existingDoctor = await Doctor.findOne({ email });

@@ -265,7 +265,7 @@ export default function DoctorProfile() {
                     Clinic Timings
                   </h4>
                   <div className="space-y-2">
-                    {Object.entries(loginUser.clinicTimings).map(([day, time]) => (
+                    {Object.entries(loginUser?.clinicTimings).map(([day, time]) => (
                       <div key={day} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50 dark:bg-neutral-700/50">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
                           {day}
@@ -311,7 +311,7 @@ export default function DoctorProfile() {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Patients</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {(loginUser.totalPatients || 0).toLocaleString()}
+                      {(loginUser?.totalPatients || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export default function DoctorProfile() {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Appointments</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {(loginUser.totalAppointments || 0).toLocaleString()}
+                      {(loginUser?.totalAppointments || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export default function DoctorProfile() {
               Patient Reviews
             </h3>
             <div className="flex items-center gap-2 mt-1">
-              <div className="flex">{renderStars(loginUser.rating || 0)}</div>
+              <div className="flex">{renderStars(loginUser?.rating || 0)}</div>
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 {loginUser?.rating || 0} out of 5 ({loginUser?.totalReviews || 0} reviews)
               </span>
@@ -548,7 +548,7 @@ export default function DoctorProfile() {
 
               <div className="flex items-center justify-center sm:justify-start gap-4 mt-3 flex-wrap">
                 <div className="flex items-center gap-1">
-                  {renderStars(loginUser.rating || 0)}
+                  {renderStars(loginUser?.rating || 0)}
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
                     {loginUser?.rating || 0}
                   </span>

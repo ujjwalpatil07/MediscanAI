@@ -1,6 +1,9 @@
 import express from "express";
 import wrapAsync from "../../utils/wrapAsync.js";
-import { updatePassword, updateProfile } from "../../controllers/patient/profile.controller.js";
+import {
+  updatePassword,
+  updateProfile,
+} from "../../controllers/patient/profile.controller.js";
 import { authMiddleware } from "../../middlewares/authMiddleware.js";
 
 const router = express.Router();
