@@ -1,131 +1,168 @@
-// BookAppointmentPage.jsx - Complete Fixed Version
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doctorsData, dummyAppointments } from '../../utils/data';
-import { generateTimeSlots, getAvailableDates, formatDate } from "../../utils/dateUtils";
+import { toast } from 'react-hot-toast';
+import { format, parseISO, isBefore, startOfDay, addDays, differenceInYears } from 'date-fns';
 import ConfirmationModal from "../../components/patient/patientComponent/ConfirmationModal";
 import Loader from "../../components/common/Loader";
+import AuthContext from '../../context/AuthContext';
+import { fetchAvailableSlots, bookAppointmentService } from '../../services/appointment.service';
+import { getDoctorByIdService } from "../../services/doctor.service";
 
 export default function BookAppointmentPage() {
-
     const { doctor_id } = useParams();
     const navigate = useNavigate();
-
-    // Local state for appointments (instead of context)
-    const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { loginUser } = useContext(AuthContext);
 
     // State management
     const [doctor, setDoctor] = useState(null);
     const [availableDates, setAvailableDates] = useState([]);
     const [selectedDate, setSelectedDate] = useState('');
     const [timeSlots, setTimeSlots] = useState([]);
-    const [selectedSlot, setSelectedSlot] = useState('');
+    const [selectedSlot, setSelectedSlot] = useState(null);
     const [appointmentType, setAppointmentType] = useState('clinic');
     const [formData, setFormData] = useState({
         bookingFor: 'self',
         patientName: '',
         patientAge: '',
-        patientPhone: '',
+        patientGender: '',
+        patientPhone: '', // Added phone for family booking
+        relation: 'self',
         symptoms: ''
     });
     const [showModal, setShowModal] = useState(false);
     const [bookingLoading, setBookingLoading] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [loadingSlots, setLoadingSlots] = useState(false);
 
-    // Get logged-in user data (simulated)
-    const currentUser = {
-        id: 101,
-        name: 'John Doe',
-        phone: '9876543210'
+    // Helper function to calculate age from DOB
+    const calculateAgeFromDOB = (dob) => {
+        if (!dob) return null;
+        const birthDate = new Date(dob);
+        if (isNaN(birthDate.getTime())) return null;
+        return differenceInYears(new Date(), birthDate);
     };
 
-    // Load doctor data and appointments
-    useEffect(() => {
-        const foundDoctor = doctorsData.find(d => d.id === parseInt(doctor_id));
-        if (!foundDoctor) {
-            setError('Doctor not found');
-            setIsLoading(false);
-            setLoading(false);
-            return;
+    // Get patient age for self booking
+    const getPatientAge = () => {
+        if (loginUser?.dob) {
+            return calculateAgeFromDOB(loginUser.dob);
         }
-        setDoctor(foundDoctor);
+        return null;
+    };
 
-        // Load appointments for this doctor only
-        const doctorAppointments = dummyAppointments.filter(apt => apt.doctorId === parseInt(doctor_id));
-        setAppointments(doctorAppointments);
+    // Fetch doctor details from API
+    const fetchDoctorDetails = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            const res = await getDoctorByIdService(doctor_id);
 
-        setIsLoading(false);
-        setLoading(false);
+            if (res.data?.success && res.data?.data) {
+                setDoctor(res.data.data);
+            } else {
+                setError('Doctor not found');
+            }
+        } catch (err) {
+            console.error('Error fetching doctor:', err);
+            setError('Failed to load doctor details');
+        } finally {
+            setIsLoading(false);
+        }
     }, [doctor_id]);
 
-    // Get booked time slots for current doctor and date (only upcoming)
-    const getBookedTimeSlots = useCallback((doctorId, date) => {
-        const today = new Date().toISOString().split('T')[0];
-        return appointments
-            .filter(apt =>
-                apt.doctorId === doctorId &&
-                apt.date === date &&
-                apt.status === 'upcoming' &&
-                apt.date >= today
-            )
-            .map(apt => apt.time);
-    }, [appointments]);
+    // Generate available dates based on doctor's schedule
+    const generateAvailableDates = useCallback((doctorData) => {
+        if (!doctorData?.availableDays) return [];
 
+        const dates = [];
+        const today = startOfDay(new Date());
+
+        for (let i = 0; i < 30; i++) {
+            const date = addDays(today, i);
+            const dayName = format(date, 'EEEE').toLowerCase();
+
+            if (doctorData.availableDays.includes(dayName)) {
+                dates.push(format(date, 'yyyy-MM-dd'));
+            }
+
+            if (dates.length >= 14) break;
+        }
+
+        return dates;
+    }, []);
+
+    // Load doctor data on component mount
+    useEffect(() => {
+        fetchDoctorDetails();
+    }, [fetchDoctorDetails]);
 
     // Generate available dates when doctor loads
     useEffect(() => {
         if (doctor?.availableDays) {
-            const dates = getAvailableDates(doctor.availableDays, 14);
+            const dates = generateAvailableDates(doctor);
             setAvailableDates(dates);
             if (dates.length > 0) {
                 setSelectedDate(dates[0]);
             }
         }
-    }, [doctor]);
+    }, [doctor, generateAvailableDates]);
 
-    // Generate time slots and filter booked slots when date changes
     useEffect(() => {
-        if (!doctor || !selectedDate) {
-            setTimeSlots([]);
-            setSelectedSlot('');
-            return;
-        }
+        let isMounted = true;
 
-        // Generate all possible slots
-        const { start, end } = doctor.availableTimeSlots;
-        const allSlots = generateTimeSlots(start, end);
+        const loadTimeSlots = async () => {
+            if (!doctor || !selectedDate) {
+                if (isMounted) {
+                    setTimeSlots([]);
+                    setSelectedSlot(null);
+                }
+                return;
+            }
 
-        // Get booked slots for this doctor and date
-        const bookedSlots = getBookedTimeSlots(doctor.id, selectedDate);
+            try {
+                if (isMounted) setLoadingSlots(true);
+                const response = await fetchAvailableSlots(doctor._id, selectedDate);
 
-        // Filter out booked slots and create slot objects with status
-        const availableSlotsWithStatus = allSlots.map(slot => ({
-            time: slot,
-            isBooked: bookedSlots.includes(slot)
-        }));
+                if (isMounted && response.data.success) {
+                    // Update to handle both available and booked slots
+                    const slots = response.data.slots.map(slot => ({
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        displayTime: format(parseISO(slot.startTime), 'h:mm a'),
+                        isBooked: slot.isBooked || false
+                    }));
+                    setTimeSlots(slots);
+                    setSelectedSlot(null);
+                    setError('');
+                } else if (isMounted) {
+                    setTimeSlots([]);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    console.error('Error fetching slots:', err);
+                    setError(err.response?.data?.message || 'Failed to load available time slots');
+                    setTimeSlots([]);
+                }
+            } finally {
+                if (isMounted) setLoadingSlots(false);
+            }
+        };
 
-        setTimeSlots(availableSlotsWithStatus);
+        loadTimeSlots();
 
-        // Clear selected slot if it's no longer available
-        if (selectedSlot && bookedSlots.includes(selectedSlot)) {
-            setSelectedSlot('');
-        }
-    }, [doctor, selectedDate, getBookedTimeSlots, selectedSlot]);
+        return () => { isMounted = false; };
+    }, [doctor, selectedDate]);
 
     // Handle date change
     const handleDateChange = (date) => {
         setSelectedDate(date);
-        setSelectedSlot(''); // Clear selected slot when date changes
+        setSelectedSlot(null);
         setError('');
     };
 
     // Handle slot selection
     const handleSlotSelect = (slot) => {
-        if (slot.isBooked) return;
-        setSelectedSlot(slot.time);
+        setSelectedSlot(slot);
         setError('');
     };
 
@@ -143,9 +180,11 @@ export default function BookAppointmentPage() {
         setFormData(prev => ({
             ...prev,
             bookingFor: value,
-            patientName: value === 'self' ? currentUser.name : '',
-            patientAge: value === 'self' ? '' : '',
-            patientPhone: value === 'self' ? currentUser.phone : ''
+            relation: value,
+            patientName: value === 'self' ? `${loginUser?.firstName || ''} ${loginUser?.lastName || ''}` : '',
+            patientAge: value === 'self' ? (getPatientAge() || '') : '',
+            patientGender: value === 'self' ? (loginUser?.gender || '') : '',
+            patientPhone: value === 'self' ? (loginUser?.mobile || '') : ''
         }));
     };
 
@@ -162,12 +201,16 @@ export default function BookAppointmentPage() {
         }
 
         if (formData.bookingFor === 'family') {
-            if (!formData.patientName.trim()) {
+            if (!formData.patientName?.trim()) {
                 setError('Please enter patient name');
                 return false;
             }
             if (!formData.patientAge || formData.patientAge < 0 || formData.patientAge > 150) {
                 setError('Please enter valid age (0-150)');
+                return false;
+            }
+            if (!formData.patientGender) {
+                setError('Please select gender');
                 return false;
             }
             if (!formData.patientPhone || !/^\d{10}$/.test(formData.patientPhone)) {
@@ -176,7 +219,7 @@ export default function BookAppointmentPage() {
             }
         }
 
-        if (!formData.symptoms.trim()) {
+        if (!formData.symptoms?.trim()) {
             setError('Please describe your symptoms');
             return false;
         }
@@ -185,9 +228,15 @@ export default function BookAppointmentPage() {
     };
 
     // Handle booking submission
-    const handleBooking = async () => {
+    const handleBooking = () => {
         if (!validateForm()) return;
         setShowModal(true);
+    };
+
+    // Generate meeting link for video consultation
+    const generateMeetingLink = () => {
+        const meetingId = `${doctor._id}_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+        return `https://meet.example.com/${meetingId}`;
     };
 
     const confirmBooking = async () => {
@@ -195,81 +244,104 @@ export default function BookAppointmentPage() {
         setError('');
 
         try {
-            // Check for duplicate booking one more time before confirming
-            const bookedSlots = getBookedTimeSlots(doctor.id, selectedDate);
-            if (bookedSlots.includes(selectedSlot)) {
-                throw new Error('This time slot has already been booked. Please select another slot.');
+            // Prepare patient details based on booking type
+            let patientDetailsObj;
+
+            if (formData.bookingFor === 'self') {
+                patientDetailsObj = {
+                    name: `${loginUser?.firstName || ''} ${loginUser?.lastName || ''}`.trim(),
+                    age: getPatientAge(),
+                    gender: loginUser?.gender || 'not specified',
+                    relation: 'self'
+                };
+            } else {
+                patientDetailsObj = {
+                    name: formData.patientName.trim(),
+                    age: parseInt(formData.patientAge),
+                    gender: formData.patientGender,
+                    relation: formData.relation,
+                    phone: formData.patientPhone // Add phone for family member
+                };
             }
 
-            const appointmentData = {
-                id: Date.now(), // Temporary ID
-                userId: currentUser.id,
-                doctorId: doctor.id,
-                doctorName: `Dr. ${doctor.firstName} ${doctor.lastName}`,
-                specialty: doctor.specialty,
-                rating: doctor.rating,
-                doctorImage: doctor.image,
-                appointmentType: appointmentType,
-                date: selectedDate,
-                time: selectedSlot,
-                status: 'upcoming',
-                consultationFee: doctor.consultationFee,
-                symptoms: formData.symptoms,
-                location: `${doctor.clinicAddress.city}, ${doctor.clinicAddress.state}`,
-                ...(appointmentType === 'video' && {
-                    meetingLink: `https://meet.example.com/${Math.random().toString(36).substr(2, 8)}`
-                }),
-                ...(formData.bookingFor === 'family' && {
-                    patientName: formData.patientName,
-                    patientAge: parseInt(formData.patientAge),
-                    patientGender: 'not specified'
-                })
+            // Prepare location data
+            const locationData = {
+                city: doctor?.clinicCity || '',
+                state: doctor?.clinicState || '',
+                fullAddress: doctor?.clinicAddress || `${doctor?.clinicCity || ''} ${doctor?.clinicState || ''}`.trim()
             };
 
-            // Add to local appointments state
-            setAppointments(prev => [...prev, appointmentData]);
+            const appointmentData = {
+                doctorId: doctor._id,
+                appointmentDate: selectedDate,
+                startTime: selectedSlot.startTime,
+                endTime: selectedSlot.endTime,
+                appointmentType: appointmentType,
+                symptoms: formData.symptoms,
+                patientDetails: patientDetailsObj,
+                location: locationData,
+                ...(appointmentType === 'video' && { meetingLink: generateMeetingLink() })
+            };
 
-            // Reset form
-            setSelectedSlot('');
-            setFormData({
-                bookingFor: 'self',
-                patientName: '',
-                patientAge: '',
-                patientPhone: '',
-                symptoms: ''
-            });
-            setShowModal(false);
+            console.log('Booking data being sent:', appointmentData); // For debugging
 
-            // Navigate to my appointments
-            navigate('/p/my-appointments');
+            const response = await bookAppointmentService(appointmentData);
+
+            if (response.data.success) {
+                toast.success('Appointment booked successfully!');
+
+                // Show meeting link for video consultation
+                if (appointmentType === 'video' && response.data.data?.meetingLink) {
+                    toast.success(`Meeting link: ${response.data.data.meetingLink}`, {
+                        duration: 10000,
+                    });
+                }
+
+                // Reset form
+                setSelectedSlot(null);
+                setFormData({
+                    bookingFor: 'self',
+                    patientName: '',
+                    patientAge: '',
+                    patientGender: '',
+                    patientPhone: '',
+                    relation: 'self',
+                    symptoms: ''
+                });
+                setShowModal(false);
+
+                // Navigate to my appointments
+                navigate('/p/my-appointments');
+            } else {
+                throw new Error(response.data.message || 'Booking failed');
+            }
         } catch (err) {
-            setError(err.message);
+            console.error('Booking error:', err);
+            const errorMsg = err.response?.data?.message || err.message || 'Failed to book appointment';
+            setError(errorMsg);
+            toast.error(errorMsg);
             setShowModal(false);
         } finally {
             setBookingLoading(false);
         }
     };
 
-    // Calculate booked slots count for display
-    const bookedSlotsCount = useMemo(() => {
-        if (!doctor || !selectedDate) return 0;
-        return getBookedTimeSlots(doctor.id, selectedDate).length;
-    }, [doctor, selectedDate, getBookedTimeSlots]);
+    // Helper functions
+    const formatDateDisplay = (dateString) => {
+        return format(parseISO(dateString), 'EEEE, MMMM d, yyyy');
+    };
 
-    const totalSlots = generateTimeSlots(
-        doctor?.availableTimeSlots?.start || '09:00',
-        doctor?.availableTimeSlots?.end || '17:00'
-    ).length;
-
-    const availableSlotsCount = timeSlots.filter(slot => !slot.isBooked).length;
+    const isDatePast = (dateString) => {
+        return isBefore(parseISO(dateString), startOfDay(new Date()));
+    };
 
     // Loading state
-    if (isLoading || loading) {
+    if (isLoading) {
         return <Loader size="lg" color="green" fullScreen text="Loading doctor details..." />;
     }
 
     // Doctor not found
-    if (!doctor) {
+    if (error === 'Doctor not found' || !doctor) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
@@ -287,12 +359,12 @@ export default function BookAppointmentPage() {
     }
 
     // No available dates
-    if (availableDates.length === 0) {
+    if (availableDates.length === 0 && !isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">No Availability</h2>
-                    <p className="text-gray-600 mb-4">This doctor has no available appointments in the next 14 days.</p>
+                    <p className="text-gray-600 mb-4">This doctor has no available appointments in the next 30 days.</p>
                     <button
                         onClick={() => navigate('/doctors')}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
@@ -310,12 +382,11 @@ export default function BookAppointmentPage() {
                 <div className="bg-gradient-to-r from-green-600 to-teal-700 dark:from-[#0a2a2a] dark:to-[#063333] py-12 mb-5">
                     <div className="text-center px-4 sm:px-6 lg:px-8">
                         <h1 className="text-3xl font-bold text-white">Book Appointment</h1>
-                        <p className="text-white mt-2">Schedule your consultation with Dr. {doctor.firstName} {doctor.lastName}</p>
+                        <p className="text-white mt-2">Schedule your consultation with Dr. {doctor?.firstName} {doctor?.lastName}</p>
                     </div>
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Main Form Section */}
                         <div className="lg:col-span-2 space-y-6">
@@ -323,26 +394,29 @@ export default function BookAppointmentPage() {
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                 <div className="flex items-center space-x-4">
                                     <img
-                                        src={doctor.image}
-                                        alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+                                        src={doctor?.profilePhoto || `https://ui-avatars.com/api/?name=${doctor?.firstName}+${doctor?.lastName}&background=10b981&color=fff`}
+                                        alt={`Dr. ${doctor?.firstName} ${doctor?.lastName}`}
                                         className="w-20 h-20 rounded-full object-cover"
+                                        onError={(e) => {
+                                            e.target.src = `https://ui-avatars.com/api/?name=${doctor?.firstName}+${doctor?.lastName}&background=10b981&color=fff`;
+                                        }}
                                     />
                                     <div>
                                         <h2 className="text-xl font-semibold text-gray-900">
-                                            Dr. {doctor.firstName} {doctor.lastName}
+                                            Dr. {doctor?.firstName} {doctor?.lastName}
                                         </h2>
-                                        <p className="text-gray-600">{doctor.specialty}</p>
+                                        <p className="text-gray-600">{doctor?.specialty}</p>
                                         <div className="flex items-center mt-1">
                                             <span className="text-yellow-400">★</span>
-                                            <span className="text-sm text-gray-600 ml-1">{doctor.rating}</span>
+                                            <span className="text-sm text-gray-600 ml-1">{doctor?.rating || 0}</span>
                                             <span className="mx-2">•</span>
-                                            <span className="text-sm text-gray-600">{doctor.yearsOfExperience} years exp</span>
+                                            <span className="text-sm text-gray-600">{doctor?.yearsOfExperience} years exp</span>
                                             <span className="mx-2">•</span>
-                                            <span className="text-sm font-semibold text-green-600">₹{doctor.consultationFee}</span>
+                                            <span className="text-sm font-semibold text-green-600">₹{doctor?.consultationFee}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="mt-4 text-gray-600 text-sm">{doctor.bio}</p>
+                                <p className="mt-4 text-gray-600 text-sm">{doctor?.bio}</p>
                             </div>
 
                             {/* Appointment Type */}
@@ -376,26 +450,32 @@ export default function BookAppointmentPage() {
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Date</h3>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                                    {availableDates.map((date) => (
-                                        <button
-                                            key={date}
-                                            onClick={() => handleDateChange(date)}
-                                            className={`py-3 px-2 rounded-lg text-center transition-all ${selectedDate === date
-                                                ? 'bg-green-600 text-white shadow-md'
-                                                : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                                                }`}
-                                        >
-                                            <div className="text-xs font-medium">
-                                                {new Date(date).toLocaleDateString('en-US', { weekday: 'short' })}
-                                            </div>
-                                            <div className="text-lg font-semibold">
-                                                {new Date(date).getDate()}
-                                            </div>
-                                            <div className="text-xs">
-                                                {new Date(date).toLocaleDateString('en-US', { month: 'short' })}
-                                            </div>
-                                        </button>
-                                    ))}
+                                    {availableDates.map((date) => {
+                                        const isPast = isDatePast(date);
+                                        return (
+                                            <button
+                                                key={date}
+                                                onClick={() => !isPast && handleDateChange(date)}
+                                                disabled={isPast}
+                                                className={`py-3 px-2 rounded-lg text-center transition-all ${selectedDate === date
+                                                    ? 'bg-green-600 text-white shadow-md'
+                                                    : isPast
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                                    }`}
+                                            >
+                                                <div className="text-xs font-medium">
+                                                    {format(parseISO(date), 'EEE')}
+                                                </div>
+                                                <div className="text-lg font-semibold">
+                                                    {format(parseISO(date), 'd')}
+                                                </div>
+                                                <div className="text-xs">
+                                                    {format(parseISO(date), 'MMM')}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -403,42 +483,84 @@ export default function BookAppointmentPage() {
                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-lg font-semibold text-gray-900">Select Time Slot</h3>
-                                    {bookedSlotsCount > 0 && (
-                                        <span className="text-sm text-orange-600">
-                                            {bookedSlotsCount} of {totalSlots} slots booked
-                                        </span>
-                                    )}
+                                    {loadingSlots && <span className="text-sm text-gray-500">Loading slots...</span>}
                                 </div>
 
-                                {availableSlotsCount === 0 ? (
+                                {!selectedDate ? (
                                     <div className="text-center py-8">
-                                        <div className="text-gray-500 mb-2">No available slots for this date</div>
-                                        <p className="text-sm text-gray-400">All slots are booked. Please select another date.</p>
+                                        <div className="text-gray-500 mb-2">Please select a date first</div>
+                                    </div>
+                                ) : loadingSlots ? (
+                                    <div className="flex justify-center py-8">
+                                        <Loader size="md" />
+                                    </div>
+                                ) : timeSlots.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <div className="text-gray-500 mb-2">No slots available for this date</div>
+                                        <p className="text-sm text-gray-400">Please select another date.</p>
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="mb-3 text-sm text-green-600">
-                                            {availableSlotsCount} slot{availableSlotsCount !== 1 ? 's' : ''} available
+                                        {/* Show statistics */}
+                                        <div className="mb-3 flex justify-between items-center text-sm">
+                                            <span className="text-green-600">
+                                                {timeSlots.filter(slot => !slot.isBooked).length} slot{timeSlots.filter(slot => !slot.isBooked).length !== 1 ? 's' : ''} available
+                                            </span>
+                                            {timeSlots.filter(slot => slot.isBooked).length > 0 && (
+                                                <span className="text-red-500">
+                                                    {timeSlots.filter(slot => slot.isBooked).length} slot{timeSlots.filter(slot => slot.isBooked).length !== 1 ? 's' : ''} booked
+                                                </span>
+                                            )}
                                         </div>
+
                                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                            {timeSlots.map((slot) => (
-                                                <button
-                                                    key={slot.time}
-                                                    onClick={() => handleSlotSelect(slot)}
-                                                    disabled={slot.isBooked}
-                                                    className={`py-2 px-3 rounded-lg border transition-all ${selectedSlot === slot.time
-                                                        ? 'border-green-600 bg-green-50 text-green-700 font-semibold ring-2 ring-green-200'
-                                                        : slot.isBooked
-                                                            ? 'border-red-200 bg-red-50 text-gray-400 cursor-not-allowed line-through'
-                                                            : 'border-gray-200 hover:border-green-400 hover:bg-green-50 hover:text-green-700'
-                                                        }`}
-                                                >
-                                                    {slot.time}
-                                                    {slot.isBooked && (
-                                                        <span className="ml-1 text-xs">(Booked)</span>
-                                                    )}
-                                                </button>
-                                            ))}
+                                            {timeSlots.map((slot, index) => {
+                                                const isSelected = selectedSlot?.startTime === slot.startTime;
+                                                const isBooked = slot.isBooked;
+
+                                                return (
+                                                    <button
+                                                        key={index}
+                                                        onClick={() => !isBooked && handleSlotSelect(slot)}
+                                                        disabled={isBooked}
+                                                        className={`
+                                py-2 px-3 rounded-lg border transition-all relative
+                                ${isSelected && !isBooked
+                                                                ? 'border-green-600 bg-green-50 text-green-700 font-semibold ring-2 ring-green-200'
+                                                                : isBooked
+                                                                    ? 'border-red-200 bg-red-50 text-gray-400 cursor-not-allowed line-through'
+                                                                    : 'border-gray-200 hover:border-green-400 hover:bg-green-50 hover:text-green-700'
+                                                            }
+                            `}
+                                                    >
+                                                        {slot.displayTime}
+                                                        {isBooked && (
+                                                            <span className="absolute -top-2 -right-2">
+                                                                <span className="relative flex h-3 w-3">
+                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                                                </span>
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Legend */}
+                                        <div className="mt-4 pt-3 border-t border-gray-100 flex gap-4 text-xs">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                                                <span className="text-gray-600">Available</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-4 h-4 bg-red-50 border border-red-200 rounded line-through"></div>
+                                                <span className="text-gray-600">Booked</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-4 h-4 bg-green-600 rounded"></div>
+                                                <span className="text-gray-600">Selected</span>
+                                            </div>
                                         </div>
                                     </>
                                 )}
@@ -478,17 +600,41 @@ export default function BookAppointmentPage() {
 
                                 <div className="space-y-4">
                                     {formData.bookingFor === 'self' ? (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={currentUser.name}
-                                                disabled
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                                            />
-                                        </div>
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={`${loginUser?.firstName || ''} ${loginUser?.lastName || ''}`}
+                                                    disabled
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Age
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={getPatientAge() || 'Not specified'}
+                                                    disabled
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Gender
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={loginUser?.gender || 'Not specified'}
+                                                    disabled
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                                />
+                                            </div>
+                                        </>
                                     ) : (
                                         <>
                                             <div>
@@ -523,6 +669,23 @@ export default function BookAppointmentPage() {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Gender *
+                                                </label>
+                                                <select
+                                                    name="patientGender"
+                                                    value={formData.patientGender}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                >
+                                                    <option value="">Select Gender</option>
+                                                    <option value="male">Male</option>
+                                                    <option value="female">Female</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                                     Phone Number *
                                                 </label>
                                                 <input
@@ -534,6 +697,25 @@ export default function BookAppointmentPage() {
                                                     placeholder="10-digit mobile number"
                                                     maxLength="10"
                                                 />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Relation *
+                                                </label>
+                                                <select
+                                                    name="relation"
+                                                    value={formData.relation}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                >
+                                                    <option value="self">Self</option>
+                                                    <option value="father">Father</option>
+                                                    <option value="mother">Mother</option>
+                                                    <option value="spouse">Spouse</option>
+                                                    <option value="child">Child</option>
+                                                    <option value="other">Other</option>
+                                                </select>
                                             </div>
                                         </>
                                     )}
@@ -562,7 +744,7 @@ export default function BookAppointmentPage() {
 
                             <button
                                 onClick={handleBooking}
-                                disabled={bookingLoading || availableSlotsCount === 0 || !selectedSlot}
+                                disabled={bookingLoading || loadingSlots || timeSlots.length === 0 || !selectedSlot}
                                 className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
                             >
                                 {bookingLoading ? 'Processing...' : 'Proceed to Confirm'}
@@ -577,32 +759,63 @@ export default function BookAppointmentPage() {
                                 <div className="space-y-3 text-sm">
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Doctor</span>
-                                        <span className="font-medium">Dr. {doctor.firstName} {doctor.lastName}</span>
+                                        <span className="font-medium">Dr. {doctor?.firstName} {doctor?.lastName}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Specialty</span>
-                                        <span className="font-medium">{doctor.specialty}</span>
+                                        <span className="font-medium">{doctor?.specialty}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Type</span>
-                                        <span className="font-medium capitalize">{appointmentType}</span>
+                                        <span className="font-medium capitalize">{appointmentType === 'clinic' ? 'Clinic Visit' : 'Video Consultation'}</span>
                                     </div>
                                     {selectedDate && (
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Date</span>
-                                            <span className="font-medium">{formatDate(selectedDate)}</span>
+                                            <span className="font-medium">{formatDateDisplay(selectedDate)}</span>
                                         </div>
                                     )}
                                     {selectedSlot && (
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Time</span>
-                                            <span className="font-medium text-green-600">{selectedSlot}</span>
+                                            <span className="font-medium text-green-600">{selectedSlot.displayTime}</span>
+                                        </div>
+                                    )}
+                                    {formData.bookingFor === 'family' && formData.patientName && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Patient</span>
+                                            <span className="font-medium">{formData.patientName}</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between pt-3 border-t border-gray-300/80">
                                         <span className="text-gray-900 font-semibold">Total Amount</span>
-                                        <span className="text-green-600 font-bold text-lg">₹{doctor.consultationFee}</span>
+                                        <span className="text-green-600 font-bold text-lg">₹{doctor?.consultationFee}</span>
                                     </div>
+
+                                    {/* Add this in the Summary Sidebar after the Total Amount section */}
+                                    {timeSlots.length > 0 && (
+                                        <div className="mt-4 pt-3 border-t border-gray-200">
+                                            <p className="text-xs text-gray-500 mb-2">Slot Availability</p>
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-gray-500">Available:</span>
+                                                <span className="text-green-600 font-semibold">
+                                                    {timeSlots.filter(s => !s.isBooked).length}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-xs mt-1">
+                                                <span className="text-gray-500">Booked:</span>
+                                                <span className="text-red-500 font-semibold">
+                                                    {timeSlots.filter(s => s.isBooked).length}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-xs mt-1">
+                                                <span className="text-gray-500">Total:</span>
+                                                <span className="text-gray-700 font-semibold">
+                                                    {timeSlots.length}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -610,7 +823,7 @@ export default function BookAppointmentPage() {
                 </div>
             </div>
 
-            {/* Confirmation Modal - Fixed positioning */}
+            {/* Confirmation Modal */}
             <ConfirmationModal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
@@ -623,23 +836,29 @@ export default function BookAppointmentPage() {
                     <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                         <div className="flex justify-between">
                             <span className="text-gray-600">Doctor:</span>
-                            <span className="font-medium">Dr. {doctor.firstName} {doctor.lastName}</span>
+                            <span className="font-medium">Dr. {doctor?.firstName} {doctor?.lastName}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Date:</span>
-                            <span className="font-medium">{formatDate(selectedDate)}</span>
+                            <span className="font-medium">{selectedDate && formatDateDisplay(selectedDate)}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Time:</span>
-                            <span className="font-medium text-green-600">{selectedSlot}</span>
+                            <span className="font-medium text-green-600">{selectedSlot?.displayTime}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Type:</span>
                             <span className="font-medium capitalize">{appointmentType === 'clinic' ? 'Clinic Visit' : 'Video Consultation'}</span>
                         </div>
+                        {appointmentType === 'video' && (
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Meeting Link:</span>
+                                <span className="font-medium text-blue-600 text-xs">Will be generated after confirmation</span>
+                            </div>
+                        )}
                         <div className="flex justify-between pt-2 border-t border-gray-300/80">
                             <span className="font-semibold">Amount:</span>
-                            <span className="font-bold text-green-600">₹{doctor.consultationFee}</span>
+                            <span className="font-bold text-green-600">₹{doctor?.consultationFee}</span>
                         </div>
                     </div>
                     <p className="text-sm text-gray-500 mt-2">Click confirm to complete your booking.</p>
@@ -647,4 +866,4 @@ export default function BookAppointmentPage() {
             </ConfirmationModal>
         </>
     );
-};
+}

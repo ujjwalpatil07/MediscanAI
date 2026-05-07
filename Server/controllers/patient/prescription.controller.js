@@ -51,44 +51,56 @@ export const createPrescription = async (req, res) => {
   }
 
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
+    session.startTransaction();
+
     const { appointmentId, medicines, notes } = req.body;
 
-    if (!appointmentId || !medicines || medicines.length === 0) {
-      const error = new Error("Appointment and medicines are required");
-      error.status = 400;
-      throw error;
+    // ✅ Basic validation
+    if (!appointmentId || !Array.isArray(medicines) || medicines.length === 0) {
+      throw { status: 400, message: "Appointment and medicines are required" };
     }
 
     const appointment =
       await Appointment.findById(appointmentId).session(session);
-
     if (!appointment) {
-      const error = new Error("Appointment not found");
-      error.status = 404;
-      throw error;
+      throw { status: 404, message: "Appointment not found" };
     }
 
-    // ✅ Ensure doctor owns this appointment
+    // ✅ Ownership check
     if (appointment.doctorId.toString() !== doctorId) {
-      const error = new Error("Unauthorized");
-      error.status = 403;
-      throw error;
+      throw { status: 403, message: "Unauthorized" };
+    }
+
+    // ✅ Prevent duplicate (better approach)
+    const existingPrescription = await Prescription.findOne({
+      appointmentId,
+    }).session(session);
+    if (existingPrescription) {
+      throw { status: 400, message: "Prescription already exists" };
     }
 
     const patient = await Patient.findById(appointment.patientId).session(
       session,
     );
-    const doctor = await Doctor.findById(doctorId).session(session);
-
-    if (appointment.prescriptionId) {
-      const error = new Error("Prescription already exists");
-      error.status = 400;
-      throw error;
+    if (!patient) {
+      throw { status: 404, message: "Patient not found" };
     }
 
+    const doctor = await Doctor.findById(doctorId).session(session);
+    if (!doctor) {
+      throw { status: 404, message: "Doctor not found" };
+    }
+
+    // ✅ Optional: validate medicines structure
+    for (const med of medicines) {
+      if (!med.name || !med.dosage) {
+        throw { status: 400, message: "Invalid medicine format" };
+      }
+    }
+
+    // ✅ Create prescription
     const prescription = await Prescription.create(
       [
         {
@@ -117,6 +129,7 @@ export const createPrescription = async (req, res) => {
 
     const createdPrescription = prescription[0];
 
+    // ✅ Update related docs
     patient.prescriptions.push(createdPrescription._id);
     doctor.prescriptions.push(createdPrescription._id);
     appointment.prescriptionId = createdPrescription._id;
@@ -126,7 +139,6 @@ export const createPrescription = async (req, res) => {
     await appointment.save({ session });
 
     await session.commitTransaction();
-    session.endSession();
 
     return res.status(201).json({
       success: true,
@@ -135,12 +147,13 @@ export const createPrescription = async (req, res) => {
     });
   } catch (err) {
     await session.abortTransaction();
-    session.endSession();
 
     return res.status(err.status || 500).json({
       success: false,
       message: err.message || "Something went wrong",
     });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -221,7 +234,7 @@ export const deletePrescription = async (req, res) => {
       { session },
     );
 
-    await Prescription.findByIdAndDelete(prescriptionId).session(session);
+    await Prescription.findByIdAndDelete(prescriptionId, { session });
 
     await session.commitTransaction();
     session.endSession();

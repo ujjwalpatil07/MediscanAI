@@ -28,14 +28,12 @@ import {
   UserSearch
 } from "lucide-react";
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import PropTypes from "prop-types";
 import Logo from "../logo/Logo";
 import CustomMenu from "../common/CustomMenu";
 import CustomDrawer from "../common/CustomDrawer";
 import { useThemeContext } from "../../context/ThemeContext";
-import { usePatientContext } from "../../context/PatientContext";
-import { useContext } from "react";
 import AuthContext from "../../context/AuthContext";
 
 const publicLinks = [
@@ -227,7 +225,7 @@ export default function Navbar() {
 }
 
 function ProfileMenuItems({ onClose, toggleTheme }) {
-  const { patientLogout } = usePatientContext();
+  const { logout } = useContext(AuthContext);
 
   return (
     <>
@@ -259,7 +257,7 @@ function ProfileMenuItems({ onClose, toggleTheme }) {
 
       <MenuItem
         onClick={() => {
-          patientLogout();
+          logout();
           onClose();
         }}
       >
