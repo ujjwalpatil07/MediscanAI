@@ -5,7 +5,6 @@ import {
   Video,
   Send,
   Paperclip,
-  Image,
   MoreVertical,
   ChevronDown,
   User,
@@ -18,25 +17,23 @@ import {
   Archive,
   Trash2,
   Ban,
-  Plus
+  Stethoscope,
 } from "lucide-react";
 import AuthContext from "../../context/AuthContext";
 import useChat from "../../hooks/useChat";
-import NewChatModal from "../../components/chat/NewChatModal";
 
-export default function DoctorMessages() {
-  // Get logged-in doctor info
+export default function PatientMessages() {
+  // Get logged-in patient info
   const { loginUser } = useContext(AuthContext);
 
-  // Use our chat hook - this handles all the chat logic
+  // Use our chat hook - same hook works for both doctor and patient
   const {
-    conversations,        // List of patients with their conversations
-    messages,             // Messages for the currently selected patient
-    selectedUser,
-    setConversations,         // Currently selected patient
-    loadingMessages,      // Loading state for messages
+    conversations,        // List of doctors with their conversations
+    messages,             // Messages for the currently selected doctor
+    selectedUser,         // Currently selected doctor
+    loadingMessages,      // Loading state
     connected,            // Socket connection status
-    selectUser,           // Function to select a patient
+    selectUser,           // Function to select a doctor
     sendMessage,          // Function to send a message
   } = useChat();
 
@@ -47,10 +44,10 @@ export default function DoctorMessages() {
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const [showNewChat, setShowNewChat] = useState(false);
+
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll when new messages arrive
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -59,16 +56,17 @@ export default function DoctorMessages() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Filter conversations based on search and filter type
+  // Filter conversations by search term and filter type
   const filteredConversations = useMemo(() => {
     let filtered = [...conversations];
 
-    // Search by patient name
+    // Search by doctor name or specialty
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter((conv) => {
         const fullName = `${conv.user?.firstName || ""} ${conv.user?.lastName || ""}`.toLowerCase();
-        return fullName.includes(search);
+        const specialty = (conv.user?.specialty || "").toLowerCase();
+        return fullName.includes(search) || specialty.includes(search);
       });
     }
 
@@ -87,21 +85,17 @@ export default function DoctorMessages() {
     return filtered;
   }, [conversations, searchTerm, filterType]);
 
-  // Calculate stats for header
-  const stats = useMemo(() => {
-    const unread = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
-    return {
-      unread,
-      totalChats: conversations.length,
-    };
+  // Calculate unread count
+  const unreadCount = useMemo(() => {
+    return conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
   }, [conversations]);
 
-  // Get initials for avatar fallback
+  // Get initials for avatar
   const getInitials = (firstName, lastName) => {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`;
   };
 
-  // Format timestamp for display
+  // Format timestamp
   const formatTime = (timestamp) => {
     if (!timestamp) return "";
     const date = new Date(timestamp);
@@ -116,12 +110,12 @@ export default function DoctorMessages() {
     return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
   };
 
-  // Format the last message preview for the conversation list
+  // Format last message preview
   const formatLastMessage = (conversation) => {
     if (!conversation.lastMessage) return "No messages yet";
-    // If we sent the last message, prefix with "You: "
-    const isMine = conversation.lastMessage.senderModel === "Doctor";
-    const prefix = isMine ? "You: " : "";
+    // If patient sent the last message, prefix with "You: "
+    const isMine = conversation.lastMessage.senderModel === "Patient";
+    const prefix = isMine ? "You: " : "Dr: ";
     return prefix + (conversation.lastMessage.message || "");
   };
 
@@ -129,15 +123,13 @@ export default function DoctorMessages() {
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
-    // Clear input immediately for better UX
     const text = newMessage;
     setNewMessage("");
 
-    // Send via socket
     await sendMessage(text);
   };
 
-  // Handle Enter key press
+  // Handle Enter key
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -145,18 +137,18 @@ export default function DoctorMessages() {
     }
   };
 
-  // Handle selecting a patient from the list
-  const handlePatientSelect = (conversation) => {
+  // Handle doctor selection
+  const handleDoctorSelect = (conversation) => {
     selectUser(conversation);
     setShowMobileChat(true);
   };
 
-  // Handle back button on mobile
+  // Handle mobile back button
   const handleBackToList = () => {
     setShowMobileChat(false);
   };
 
-  // Filter options for dropdown
+  // Filter options
   const filterOptions = [
     { value: "all", label: "All Messages" },
     { value: "unread", label: "Unread" },
@@ -166,38 +158,24 @@ export default function DoctorMessages() {
   return (
     <div className="h-[calc(100vh-130px)] flex flex-col">
       {/* Header */}
-      {/* Header */}
       <div className="flex-shrink-0 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Messages
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {stats.unread} unread • {stats.totalChats} conversations
-            </p>
-            {!connected && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                Connecting...
-              </p>
-            )}
-          </div>
-
-          {/* New Chat Button */}
-          <button
-            onClick={() => setShowNewChat(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            New Chat
-          </button>
-        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Messages
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          {unreadCount} unread • {conversations.length} conversations
+        </p>
+        {!connected && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+            Connecting to chat server...
+          </p>
+        )}
       </div>
 
       {/* Main Chat Container */}
       <div className="flex-1 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-100 dark:border-neutral-700 overflow-hidden flex">
 
-        {/* ==================== LEFT SIDEBAR - Patient List ==================== */}
+        {/* ==================== LEFT SIDEBAR - Doctor List ==================== */}
         <div
           className={`${showMobileChat ? "hidden lg:flex" : "flex"
             } w-full lg:w-80 xl:w-96 flex-shrink-0 flex-col border-r border-gray-200 dark:border-neutral-700`}
@@ -210,12 +188,11 @@ export default function DoctorMessages() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search patients..."
+                placeholder="Search doctors..."
                 className="w-full pl-9 pr-4 py-2 rounded-lg bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-600 text-sm"
               />
             </div>
 
-            {/* Filter Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -250,37 +227,44 @@ export default function DoctorMessages() {
             </div>
           </div>
 
-          {/* Patient List */}
+          {/* Doctor List */}
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length > 0 ? (
               filteredConversations.map((conversation) => (
                 <div
                   key={conversation.userId}
-                  onClick={() => handlePatientSelect(conversation)}
+                  onClick={() => handleDoctorSelect(conversation)}
                   className={`px-4 py-3 cursor-pointer transition hover:bg-gray-50 dark:hover:bg-neutral-750 border-b border-gray-100 dark:border-neutral-700/50 ${selectedUser?.userId === conversation.userId
                       ? "bg-green-50 dark:bg-green-900/10 border-l-4 border-l-green-600"
                       : ""
                     }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Patient Avatar */}
+                    {/* Doctor Avatar */}
                     <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center">
-                        <span className="text-base font-semibold text-gray-600 dark:text-gray-400">
-                          {getInitials(conversation.user?.firstName, conversation.user?.lastName)}
-                        </span>
-                      </div>
-                      {/* Online indicator */}
+                      {conversation.user?.profilePhoto ? (
+                        <img
+                          src={conversation.user.profilePhoto}
+                          alt=""
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <span className="text-base font-semibold text-blue-600 dark:text-blue-400">
+                            {getInitials(conversation.user?.firstName, conversation.user?.lastName)}
+                          </span>
+                        </div>
+                      )}
                       {conversation.user?.isActive && (
                         <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-neutral-800" />
                       )}
                     </div>
 
-                    {/* Patient Info */}
+                    {/* Doctor Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate pr-2">
-                          {conversation.user?.firstName} {conversation.user?.lastName}
+                          Dr. {conversation.user?.firstName} {conversation.user?.lastName}
                         </h4>
                         <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                           {formatTime(conversation.lastMessage?.createdAt)}
@@ -292,7 +276,10 @@ export default function DoctorMessages() {
                       </p>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">Patient</span>
+                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <Stethoscope className="w-3 h-3" />
+                          {conversation.user?.specialty || "Doctor"}
+                        </span>
                         {conversation.unreadCount > 0 && (
                           <span className="w-5 h-5 rounded-full bg-green-600 text-white text-xs flex items-center justify-center font-medium">
                             {conversation.unreadCount}
@@ -309,6 +296,9 @@ export default function DoctorMessages() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   No conversations yet
                 </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Chat with doctors after booking an appointment
+                </p>
               </div>
             )}
           </div>
@@ -324,7 +314,6 @@ export default function DoctorMessages() {
               {/* Chat Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-neutral-700 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  {/* Back button (mobile only) */}
                   <button
                     onClick={handleBackToList}
                     className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 transition lg:hidden"
@@ -332,25 +321,34 @@ export default function DoctorMessages() {
                     <ArrowLeft className="w-5 h-5 text-gray-500" />
                   </button>
 
-                  {/* Patient Avatar */}
+                  {/* Doctor Avatar */}
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                        {getInitials(selectedUser.user?.firstName, selectedUser.user?.lastName)}
-                      </span>
-                    </div>
+                    {selectedUser.user?.profilePhoto ? (
+                      <img
+                        src={selectedUser.user.profilePhoto}
+                        alt=""
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                          {getInitials(selectedUser.user?.firstName, selectedUser.user?.lastName)}
+                        </span>
+                      </div>
+                    )}
                     {selectedUser.user?.isActive && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-neutral-800" />
                     )}
                   </div>
 
-                  {/* Patient Name */}
+                  {/* Doctor Name & Specialty */}
                   <div>
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {selectedUser.user?.firstName} {selectedUser.user?.lastName}
+                      Dr. {selectedUser.user?.firstName} {selectedUser.user?.lastName}
                     </h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {selectedUser.user?.isActive ? "Online" : "Offline"}
+                      {selectedUser.user?.specialty || "Doctor"}
+                      {selectedUser.user?.isActive ? " • Online" : ""}
                     </p>
                   </div>
                 </div>
@@ -383,9 +381,6 @@ export default function DoctorMessages() {
                         </button>
                         <hr className="my-1 border-gray-200 dark:border-neutral-700" />
                         <button className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
-                          <Ban className="w-4 h-4" /> Block Patient
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
                           <Trash2 className="w-4 h-4" /> Delete Chat
                         </button>
                       </div>
@@ -402,32 +397,32 @@ export default function DoctorMessages() {
                   </div>
                 ) : messages.length > 0 ? (
                   messages.map((msg, index) => {
-                    // Determine if this message was sent by the current doctor
-                    const isDoctor = msg.senderModel === "Doctor";
+                    // Check if this message was sent by the current patient
+                    const isPatient = msg.senderModel === "Patient";
 
-                    // Show avatar only for first message in a group from same sender
+                    // Show avatar only for first message in a group
                     const showAvatar =
                       index === 0 || messages[index - 1]?.senderModel !== msg.senderModel;
 
                     return (
                       <div
                         key={msg._id || index}
-                        className={`flex items-end gap-2 ${isDoctor ? "justify-end" : "justify-start"}`}
+                        className={`flex items-end gap-2 ${isPatient ? "justify-end" : "justify-start"}`}
                       >
-                        {/* Patient Avatar (left side) */}
-                        {!isDoctor && showAvatar && (
-                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        {/* Doctor Avatar (left side) */}
+                        {!isPatient && showAvatar && (
+                          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                               {getInitials(selectedUser.user?.firstName, selectedUser.user?.lastName)}
                             </span>
                           </div>
                         )}
-                        {!isDoctor && !showAvatar && <div className="w-8 flex-shrink-0" />}
+                        {!isPatient && !showAvatar && <div className="w-8 flex-shrink-0" />}
 
                         {/* Message Bubble */}
                         <div className={`max-w-[75%] sm:max-w-md`}>
                           <div
-                            className={`px-4 py-2.5 rounded-2xl ${isDoctor
+                            className={`px-4 py-2.5 rounded-2xl ${isPatient
                                 ? "bg-green-600 text-white rounded-br-md"
                                 : "bg-white dark:bg-neutral-800 text-gray-900 dark:text-white rounded-bl-md shadow-sm border border-gray-100 dark:border-neutral-700"
                               }`}
@@ -436,9 +431,9 @@ export default function DoctorMessages() {
                           </div>
 
                           {/* Timestamp and Read Receipt */}
-                          <div className={`flex items-center gap-1 mt-1 ${isDoctor ? "justify-end" : "justify-start"}`}>
+                          <div className={`flex items-center gap-1 mt-1 ${isPatient ? "justify-end" : "justify-start"}`}>
                             <span className="text-xs text-gray-400">{formatTime(msg.createdAt)}</span>
-                            {isDoctor && (
+                            {isPatient && (
                               msg.read ? (
                                 <CheckCheck className="w-3.5 h-3.5 text-blue-500" />
                               ) : (
@@ -448,15 +443,15 @@ export default function DoctorMessages() {
                           </div>
                         </div>
 
-                        {/* Doctor Avatar (right side) */}
-                        {isDoctor && showAvatar && (
+                        {/* Patient Avatar (right side) */}
+                        {isPatient && showAvatar && (
                           <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                             <span className="text-xs font-semibold text-green-600 dark:text-green-400">
                               {getInitials(loginUser?.firstName, loginUser?.lastName)}
                             </span>
                           </div>
                         )}
-                        {isDoctor && !showAvatar && <div className="w-8 flex-shrink-0" />}
+                        {isPatient && !showAvatar && <div className="w-8 flex-shrink-0" />}
                       </div>
                     );
                   })
@@ -465,7 +460,7 @@ export default function DoctorMessages() {
                     <div className="text-center">
                       <MessageCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        No messages yet. Start the conversation!
+                        No messages yet. Send a message to start!
                       </p>
                     </div>
                   </div>
@@ -501,7 +496,7 @@ export default function DoctorMessages() {
               </div>
             </>
           ) : (
-            /* Empty State - No conversation selected */
+            /* Empty State */
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center px-6">
                 <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
@@ -511,29 +506,14 @@ export default function DoctorMessages() {
                   Your Messages
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                  Select a patient from the list to view your conversation.
+                  Select a doctor from the list to view your conversation.
+                  Chat with your doctors about appointments, prescriptions, and health concerns.
                 </p>
               </div>
             </div>
           )}
         </div>
       </div>
-      {/* New Chat Modal */}
-      <NewChatModal
-        isOpen={showNewChat}
-        onClose={() => setShowNewChat(false)}
-        onSelectPatient={(patientConversation) => {
-          // Add this patient to conversations list if not already there
-          setConversations((prev) => {
-            const exists = prev.find((c) => c.userId === patientConversation.userId);
-            if (exists) return prev;
-            return [patientConversation, ...prev];
-          });
-          // Select the patient to open chat
-          selectUser(patientConversation);
-          setShowMobileChat(true);
-        }}
-      />
     </div>
   );
 }

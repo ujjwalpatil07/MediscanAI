@@ -39,7 +39,7 @@ export const initializeSocket = (server) => {
 
   io.on("connection", (socket) => {
     console.log(`${socket.userRole} connected: ${socket.userId} (${socket.userRole})`);
-
+    
     // Store online user
     onlineUsers.set(socket.userId.toString(), {
       socketId: socket.id,

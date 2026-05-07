@@ -34,6 +34,7 @@ import PatientDetail from "../pages/doctor/PatientDetail";
 import Blog from "../pages/doctor/Blog";
 import AboutUs from "../pages/AboutUs";
 import ContactUs from "../pages/ContactUs";
+import PatientMessages from "../pages/patient/Messages";
 
 export default function Routers() {
 
@@ -68,7 +69,7 @@ export default function Routers() {
       <Route path="/p/prescriptions" element={<PatientLayout><PrescriptionsPage/></PatientLayout>} />
       <Route path="/p/medical-records" element={<PatientLayout><MedicalRecordsPage/></PatientLayout>} />
       <Route path="/p/profile" element={<PatientLayout><PatientProfile/></PatientLayout>} />
-
+      <Route path="/p/messages" element={<PatientLayout><PatientMessages /></PatientLayout>} />
 
       {/* ------------------------------------------------------------Doctor Routes----------------------------------------------------- */}
       <Route element={<DoctorLayout />}>
