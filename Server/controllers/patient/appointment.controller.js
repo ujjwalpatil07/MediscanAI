@@ -184,7 +184,7 @@ export const getMyAppointments = async (req, res) => {
 
   return res.status(httpStatus.OK).json({
     success: true,
-    data: appointments,
+    appointments,
   });
 };
 

@@ -54,7 +54,7 @@ export const getDoctorById = async (req, res) => {
 
   return res.status(httpStatus.OK).json({
     success: true,
-    data: doctor,
+    doctor,
   });
 };
 

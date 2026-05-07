@@ -7,14 +7,16 @@ import Doctor from "../../models/Doctor.js";
 
 export const getMyPrescriptions = async (req, res) => {
   const patientId = req.user.id;
+  
 
   const prescriptions = await Prescription.find({ patientId }).sort({
     createdAt: -1,
   });
 
+
   return res.status(httpStatus.OK).json({
     success: true,
-    data: prescriptions,
+    prescriptions,
   });
 };
 

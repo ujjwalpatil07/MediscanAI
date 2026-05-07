@@ -6,7 +6,7 @@ import ConfirmationModal from "../../components/patient/patientComponent/Confirm
 import Loader from "../../components/common/Loader";
 import AuthContext from '../../context/AuthContext';
 import { fetchAvailableSlots, bookAppointmentService } from '../../services/appointment.service';
-import { getDoctorByIdService } from "../../services/doctor.service";
+import { getDoctorById } from "../../services/doctor.service";
 
 export default function BookAppointmentPage() {
     const { doctor_id } = useParams();
@@ -55,10 +55,10 @@ export default function BookAppointmentPage() {
     const fetchDoctorDetails = useCallback(async () => {
         try {
             setIsLoading(true);
-            const res = await getDoctorByIdService(doctor_id);
+            const res = await getDoctorById(doctor_id);
 
-            if (res.data?.success && res.data?.data) {
-                setDoctor(res.data.data);
+            if (res.data?.success && res.data?.doctor) {
+                setDoctor(res.data.doctor);
             } else {
                 setError('Doctor not found');
             }

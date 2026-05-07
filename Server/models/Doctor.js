@@ -281,7 +281,7 @@ const doctorSchema = new mongoose.Schema(
     // Account Status
     isVerified: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     profileCompletion: {
       type: Number,

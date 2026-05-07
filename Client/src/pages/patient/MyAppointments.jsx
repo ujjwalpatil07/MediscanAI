@@ -14,36 +14,37 @@ import {
     BookOpen,
     Stethoscope,
     DollarSign,
-    User as UserIcon
+    User as UserIcon,
 } from "lucide-react";
-import { dummyAppointments } from "../../utils/data";
 import AuthContext from "../../context/AuthContext";
-
+import { getMyAppointmentsService } from "../../services/appointment.service";
 
 const statusConfig = {
     upcoming: {
         label: "Upcoming",
-        color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-        border: "border-green-200 dark:border-green-800"
+        color:
+            "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+        border: "border-green-200 dark:border-green-800",
     },
     completed: {
         label: "Completed",
-        color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-        border: "border-blue-200 dark:border-blue-800"
+        color:
+            "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+        border: "border-blue-200 dark:border-blue-800",
     },
     cancelled: {
         label: "Cancelled",
         color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-        border: "border-red-200 dark:border-red-800"
-    }
+        border: "border-red-200 dark:border-red-800",
+    },
 };
 
 export default function MyAppointmentsPage() {
     const navigate = useNavigate();
-
     const { loginUser } = useContext(AuthContext);
 
     const [appointments, setAppointments] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("upcoming");
     const [searchQuery, setSearchQuery] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");
@@ -51,35 +52,57 @@ export default function MyAppointmentsPage() {
 
     const userId = loginUser?._id;
 
-    // Load appointments
     useEffect(() => {
-        // Simulate API call - filter by userId
-        const userAppointments = dummyAppointments.filter(apt => apt.userId === userId);
-        setAppointments(userAppointments);
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const response = await getMyAppointmentsService(userId);
+                setAppointments(response?.data?.appointments || []);
+            } catch (error) {
+                console.error("Failed to fetch appointments:", error);
+                setAppointments([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
     }, [userId]);
 
     // Filter and sort appointments
     const filteredAppointments = useMemo(() => {
-        let filtered = appointments.filter(apt => apt.status === activeTab);
+        let filtered = appointments.filter(
+            (apt) => apt?.status === activeTab
+        );
 
-        // Search by doctor name or patient name
+        // Search by doctor name or symptoms
         if (searchQuery) {
-            filtered = filtered.filter(apt =>
-                apt.doctorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                apt.patientName?.toLowerCase().includes(searchQuery.toLowerCase())
+            const search = searchQuery.toLowerCase();
+            filtered = filtered.filter(
+                (apt) =>
+                    apt?.doctorSnapshot?.name?.toLowerCase().includes(search) ||
+                    apt?.doctorId?.firstName?.toLowerCase().includes(search) ||
+                    apt?.doctorId?.lastName?.toLowerCase().includes(search) ||
+                    apt?.symptoms?.toLowerCase().includes(search) ||
+                    apt?.patientDetails?.name?.toLowerCase().includes(search)
             );
         }
 
         // Filter by appointment type
         if (typeFilter !== "all") {
-            filtered = filtered.filter(apt => apt.appointmentType === typeFilter);
+            filtered = filtered.filter(
+                (apt) => apt?.appointmentType === typeFilter
+            );
         }
 
         // Sort appointments
         if (activeTab === "upcoming") {
-            filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+            filtered.sort(
+                (a, b) => new Date(a?.appointmentDate) - new Date(b?.appointmentDate)
+            );
         } else {
-            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            filtered.sort(
+                (a, b) => new Date(b?.appointmentDate) - new Date(a?.appointmentDate)
+            );
         }
 
         return filtered;
@@ -87,69 +110,143 @@ export default function MyAppointmentsPage() {
 
     // Get counts for tabs
     const getCountByStatus = (status) => {
-        return appointments.filter(apt => apt.status === status).length;
+        return appointments.filter((apt) => apt?.status === status).length;
     };
 
     // Cancel appointment
-    const handleCancelAppointment = () => {
+    const handleCancelAppointment = async () => {
         if (showCancelModal) {
-            setAppointments(prev =>
-                prev.map(apt =>
-                    apt.id === showCancelModal.id
-                        ? { ...apt, status: "cancelled" }
-                        : apt
-                )
-            );
-            setShowCancelModal(null);
-            alert(`Appointment with ${showCancelModal.doctorName} has been cancelled.`);
-        }
-    };
+            try {
+                // TODO: Call API to cancel appointment
+                // await cancelAppointmentService(showCancelModal._id);
 
-    // Join video call
-    const handleJoinCall = (appointment) => {
-        if (appointment.meetingLink) {
-            window.open(appointment.meetingLink, "_blank");
-        } else {
-            alert("Joining video call...\nThis feature will be available soon.");
+                setAppointments((prev) =>
+                    prev.map((apt) =>
+                        apt?._id === showCancelModal?._id
+                            ? { ...apt, status: "cancelled" }
+                            : apt
+                    )
+                );
+                alert(
+                    `Appointment with ${showCancelModal?.doctorSnapshot?.name || showCancelModal?.doctorId?.firstName} has been cancelled.`
+                );
+            } catch (error) {
+                console.error("Failed to cancel appointment:", error);
+            }
+            setShowCancelModal(null);
         }
     };
 
     // Book again
     const handleBookAgain = (doctorId) => {
-        navigate(`/doctors/${doctorId}`);
-    };
-
-    // View summary
-    const handleViewSummary = (appointment) => {
-        alert(`Appointment Summary:\n\nDoctor: ${appointment.doctorName}\nSpecialty: ${appointment.specialty}\nPatient: ${appointment.patientName || "Self"}\nDate: ${appointment.date}\nTime: ${appointment.time}\nSymptoms: ${appointment.symptoms}\nFee: ₹${appointment.consultationFee}`);
+        const id = doctorId?._id || doctorId;
+        navigate(`/p/book-appointment/${id}`);
     };
 
     // Format date for display
     const formatDisplayDate = (dateString) => {
+        if (!dateString) return "N/A";
         const date = new Date(dateString);
         return date.toLocaleDateString("en-US", {
             weekday: "short",
             month: "short",
             day: "numeric",
-            year: "numeric"
+            year: "numeric",
         });
+    };
+
+    // Format time from ISO date
+    const formatTime = (startTime, endTime) => {
+        if (!startTime) return "N/A";
+        const start = new Date(startTime);
+        const end = endTime ? new Date(endTime) : null;
+
+        const timeOptions = { hour: "2-digit", minute: "2-digit", hour12: true };
+
+        if (end) {
+            return `${start.toLocaleTimeString("en-US", timeOptions)} - ${end.toLocaleTimeString("en-US", timeOptions)}`;
+        }
+        return start.toLocaleTimeString("en-US", timeOptions);
+    };
+
+    // Get doctor name
+    const getDoctorName = (appointment) => {
+        if (appointment?.doctorSnapshot?.name) {
+            return appointment.doctorSnapshot.name;
+        }
+        const firstName = appointment?.doctorId?.firstName || "";
+        const lastName = appointment?.doctorId?.lastName || "";
+        return `Dr. ${firstName} ${lastName}`.trim();
+    };
+
+    // Get doctor image
+    const getDoctorImage = (appointment) => {
+        return (
+            appointment?.doctorSnapshot?.image ||
+            appointment?.doctorId?.profilePhoto ||
+            null
+        );
+    };
+
+    // Get doctor specialty
+    const getDoctorSpecialty = (appointment) => {
+        return (
+            appointment?.doctorSnapshot?.specialty ||
+            appointment?.doctorId?.specialty ||
+            "Specialty not specified"
+        );
+    };
+
+    // Get doctor rating
+    const getDoctorRating = (appointment) => {
+        return appointment?.doctorSnapshot?.rating ?? 0;
+    };
+
+    // Get appointment type label
+    const getAppointmentTypeLabel = (type) => {
+        switch (type) {
+            case "video":
+                return "Video Consultation";
+            case "clinic":
+                return "Clinic Visit";
+            case "online":
+                return "Online Consultation";
+            default:
+                return type || "Consultation";
+        }
     };
 
     // Check if appointment is today or future
     const isTodayOrFuture = (dateString) => {
+        if (!dateString) return false;
         const appointmentDate = new Date(dateString);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return appointmentDate >= today;
     };
 
+    // Get initials for avatar fallback
+    const getInitials = (name) => {
+        if (!name) return "?";
+        return name
+            .split(" ")
+            .map((n) => n?.[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
     return (
-        <div className="min-h-screen bg-gray-100 text-gray-800 dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353] dark:text-gray-300 mb-3">
+        <div className="min-h-screen bg-gray-100 dark:bg-neutral-900 text-gray-800 dark:text-gray-300">
             {/* Header */}
-            <div className="bg-gradient-to-r from-green-600 to-teal-700 dark:from-[#0a2a2a] dark:to-[#063333] py-8">
+            <div className="bg-gradient-to-r from-green-600 to-teal-700 dark:from-green-900 dark:to-neutral-800 py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-white text-center">My Appointments</h1>
-                    <p className="text-green-100 text-center mt-2">Manage your upcoming and past consultations</p>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-white text-center">
+                        My Appointments
+                    </h1>
+                    <p className="text-green-100 text-center mt-2">
+                        Manage your upcoming and past consultations
+                    </p>
                 </div>
             </div>
 
@@ -162,7 +259,7 @@ export default function MyAppointmentsPage() {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search by doctor or patient name..."
+                            placeholder="Search by doctor name or symptoms..."
                             className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         />
                     </div>
@@ -176,6 +273,7 @@ export default function MyAppointmentsPage() {
                             <option value="all">All Types</option>
                             <option value="video">Video Consultation</option>
                             <option value="clinic">Clinic Visit</option>
+                            <option value="online">Online Consultation</option>
                         </select>
 
                         {(searchQuery || typeFilter !== "all") && (
@@ -204,10 +302,12 @@ export default function MyAppointmentsPage() {
                                 }`}
                         >
                             {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${activeTab === tab
-                                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                                }`}>
+                            <span
+                                className={`ml-2 px-2 py-0.5 text-xs rounded-full ${activeTab === tab
+                                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                                    }`}
+                            >
                                 {getCountByStatus(tab)}
                             </span>
                             {activeTab === tab && (
@@ -217,13 +317,23 @@ export default function MyAppointmentsPage() {
                     ))}
                 </div>
 
-                {/* Appointments Grid */}
-                {filteredAppointments.length === 0 ? (
+                {/* Loading State */}
+                {loading ? (
+                    <div className="text-center py-16">
+                        <div className="w-16 h-16 mx-auto mb-4 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-gray-500 dark:text-gray-400">
+                            Loading your appointments...
+                        </p>
+                    </div>
+                ) : filteredAppointments.length === 0 ? (
+                    /* Empty State */
                     <div className="text-center py-16">
                         <div className="w-24 h-24 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
                             <Calendar className="w-12 h-12 text-gray-400 dark:text-gray-500" />
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No appointments found</h3>
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            No appointments found
+                        </h3>
                         <p className="text-gray-500 dark:text-gray-400 mb-6">
                             {searchQuery || typeFilter !== "all"
                                 ? "Try adjusting your search or filters"
@@ -237,103 +347,149 @@ export default function MyAppointmentsPage() {
                         </Link>
                     </div>
                 ) : (
+                    /* Appointments Grid */
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {filteredAppointments.map((appointment) => (
                             <div
-                                key={appointment.id}
-                                className={`bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border-l-4 ${statusConfig[appointment.status].border
+                                key={appointment?._id}
+                                className={`bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border-l-4 ${statusConfig[appointment?.status]?.border || "border-gray-200"
                                     }`}
                             >
                                 <div className="p-5">
                                     {/* Header with Doctor Info */}
                                     <div className="flex gap-4">
-                                        <img
-                                            src={appointment.doctorImage}
-                                            alt={appointment.doctorName}
-                                            className="w-16 h-16 rounded-full object-cover"
-                                        />
+                                        {/* Doctor Image / Avatar */}
+                                        {getDoctorImage(appointment) ? (
+                                            <img
+                                                src={getDoctorImage(appointment)}
+                                                alt={getDoctorName(appointment)}
+                                                className="w-16 h-16 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                                                    {getInitials(getDoctorName(appointment))}
+                                                </span>
+                                            </div>
+                                        )}
+
                                         <div className="flex-1">
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <div>
                                                     <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                                                        {appointment.doctorName}
+                                                        {getDoctorName(appointment)}
                                                     </h3>
                                                     <p className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1">
                                                         <Stethoscope className="w-3 h-3" />
-                                                        {appointment.specialty}
+                                                        {getDoctorSpecialty(appointment)}
                                                     </p>
                                                 </div>
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[appointment.status].color}`}>
-                                                    {statusConfig[appointment.status].label}
+                                                <span
+                                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[appointment?.status]?.color || ""
+                                                        }`}
+                                                >
+                                                    {statusConfig[appointment?.status]?.label ||
+                                                        appointment?.status}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 mt-1">
                                                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                                                <span className="text-sm text-gray-600 dark:text-gray-400">{appointment.rating}</span>
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                    {getDoctorRating(appointment)}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Patient Info - For family member bookings */}
-                                    {appointment.patientName && appointment.patientName !== `${loginUser?.firstName} ${loginUser?.lastName}` && (
-                                        <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-2">
-                                            <UserIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                            <p className="text-xs text-green-700 dark:text-green-300">
-                                                <span className="font-medium">Booking for:</span> {appointment.patientName} 
-                                                {appointment.patientAge && ` (${appointment.patientAge} years)`}
-                                                {appointment.patientGender && `, ${appointment.patientGender}`}
-                                            </p>
-                                        </div>
-                                    )}
+                                    {appointment?.patientDetails?.relation !== "self" &&
+                                        appointment?.patientDetails?.name && (
+                                            <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-2">
+                                                <UserIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                                <p className="text-xs text-green-700 dark:text-green-300">
+                                                    <span className="font-medium">Booking for:</span>{" "}
+                                                    {appointment.patientDetails.name}
+                                                    {appointment?.patientDetails?.age &&
+                                                        ` (${appointment.patientDetails.age} years)`}
+                                                    {appointment?.patientDetails?.gender &&
+                                                        `, ${appointment.patientDetails.gender}`}
+                                                </p>
+                                            </div>
+                                        )}
 
                                     {/* Appointment Details */}
                                     <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                             <CalendarIcon className="w-4 h-4" />
-                                            <span>{formatDisplayDate(appointment.date)}</span>
+                                            <span>
+                                                {formatDisplayDate(appointment?.appointmentDate)}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                             <Clock className="w-4 h-4" />
-                                            <span>{appointment.time}</span>
+                                            <span>
+                                                {formatTime(
+                                                    appointment?.startTime,
+                                                    appointment?.endTime
+                                                )}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                            {appointment.appointmentType === "video" ? (
+                                            {appointment?.appointmentType === "video" ? (
                                                 <Video className="w-4 h-4" />
                                             ) : (
                                                 <MapPin className="w-4 h-4" />
                                             )}
                                             <span>
-                                                {appointment.appointmentType === "video" ? "Video Consultation" : appointment.location}
+                                                {getAppointmentTypeLabel(
+                                                    appointment?.appointmentType
+                                                )}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                             <DollarSign className="w-4 h-4" />
-                                            <span>₹{appointment.consultationFee}</span>
+                                            <span>₹{appointment?.consultationFee || 0}</span>
                                         </div>
                                     </div>
 
-                                    {/* Symptoms (if any) */}
-                                    {appointment.symptoms && (
+                                    {/* Payment Status */}
+                                    {appointment?.payment?.status && (
                                         <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                <span className="font-medium">Symptoms:</span> {appointment.symptoms}
+                                                <span className="font-medium">Payment:</span>{" "}
+                                                <span className="capitalize">
+                                                    {appointment.payment.status}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Symptoms */}
+                                    {appointment?.symptoms && (
+                                        <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                <span className="font-medium">Symptoms:</span>{" "}
+                                                {appointment.symptoms}
                                             </p>
                                         </div>
                                     )}
 
                                     {/* Action Buttons */}
                                     <div className="mt-4 flex flex-wrap gap-2">
-                                        {appointment.status === "upcoming" && (
+                                        {appointment?.status === "upcoming" && (
                                             <>
-                                                {appointment.appointmentType === "video" && isTodayOrFuture(appointment.date) && (
-                                                    <button
-                                                        onClick={() => handleJoinCall(appointment)}
-                                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all"
-                                                    >
-                                                        <Video className="w-4 h-4" />
-                                                        Join Call
-                                                    </button>
-                                                )}
+                                                {appointment?.appointmentType === "video" &&
+                                                    isTodayOrFuture(appointment?.appointmentDate) && (
+                                                        <button
+                                                            onClick={() =>
+                                                                alert("Video call feature coming soon!")
+                                                            }
+                                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                                                        >
+                                                            <Video className="w-4 h-4" />
+                                                            Join Call
+                                                        </button>
+                                                    )}
                                                 <button
                                                     onClick={() => setShowCancelModal(appointment)}
                                                     className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all"
@@ -344,17 +500,16 @@ export default function MyAppointmentsPage() {
                                             </>
                                         )}
 
-                                        {appointment.status === "completed" && (
+                                        {appointment?.status === "completed" && (
                                             <>
-                                                <button
-                                                    onClick={() => handleViewSummary(appointment)}
-                                                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all"
-                                                >
+                                                <button className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all">
                                                     <FileText className="w-4 h-4" />
                                                     View Summary
                                                 </button>
                                                 <button
-                                                    onClick={() => handleBookAgain(appointment.doctorId)}
+                                                    onClick={() =>
+                                                        handleBookAgain(appointment?.doctorId)
+                                                    }
                                                     className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all"
                                                 >
                                                     <BookOpen className="w-4 h-4" />
@@ -363,9 +518,11 @@ export default function MyAppointmentsPage() {
                                             </>
                                         )}
 
-                                        {appointment.status === "cancelled" && (
+                                        {appointment?.status === "cancelled" && (
                                             <button
-                                                onClick={() => handleBookAgain(appointment.doctorId)}
+                                                onClick={() =>
+                                                    handleBookAgain(appointment?.doctorId)
+                                                }
                                                 className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all"
                                             >
                                                 <BookOpen className="w-4 h-4" />
@@ -385,7 +542,9 @@ export default function MyAppointmentsPage() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-xl">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Cancel Appointment</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                                Cancel Appointment
+                            </h3>
                             <button
                                 onClick={() => setShowCancelModal(null)}
                                 className="text-gray-400 hover:text-gray-600"
@@ -394,13 +553,16 @@ export default function MyAppointmentsPage() {
                             </button>
                         </div>
                         <p className="text-gray-600 dark:text-gray-400 mb-2">
-                            Are you sure you want to cancel your appointment with <strong>{showCancelModal.doctorName}</strong>?
+                            Are you sure you want to cancel your appointment with{" "}
+                            <strong>{getDoctorName(showCancelModal)}</strong>?
                         </p>
-                        {showCancelModal.patientName && showCancelModal.patientName !== `${loginUser?.firstName} ${loginUser?.lastName}` && (
-                            <p className="text-sm text-orange-600 dark:text-orange-400 mb-2">
-                                Note: This appointment was booked for {showCancelModal.patientName}.
-                            </p>
-                        )}
+                        {showCancelModal?.patientDetails?.relation !== "self" &&
+                            showCancelModal?.patientDetails?.name && (
+                                <p className="text-sm text-orange-600 dark:text-orange-400 mb-2">
+                                    Note: This appointment was booked for{" "}
+                                    {showCancelModal.patientDetails.name}.
+                                </p>
+                            )}
                         <p className="text-gray-500 dark:text-gray-500 text-sm mb-6">
                             This action cannot be undone.
                         </p>

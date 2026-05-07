@@ -1,6 +1,6 @@
 import api from "../api/api.js";
 
-export const getDoctorByIdService = (doctorId) => {
+export const getDoctorById = (doctorId) => {
   return api.get(`/doctor/${doctorId}`);
 };
 
