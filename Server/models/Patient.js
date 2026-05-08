@@ -9,14 +9,17 @@ const patientSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     lastName: {
       type: String,
       required: true,
       trim: true,
     },
+
     dob: {
       type: Date,
     },
+
     gender: {
       type: String,
       enum: ["male", "female", "other"],
@@ -30,11 +33,30 @@ const patientSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
     mobile: {
       type: String,
+      trim: true,
     },
+
     address: {
       type: String,
+      trim: true,
+    },
+
+    profilePhoto: {
+      type: String,
+      default: "",
+    },
+
+    profilePhotoPublicId: {
+      type: String,
+      default: "",
     },
 
     // 🔹 Auth
@@ -42,15 +64,20 @@ const patientSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    appointments : [{
-      type : mongoose.Schema.Types.ObjectId,
-      ref : "Appointment"
-    }],
 
-    prescriptions : [{
-      type : mongoose.Schema.Types.ObjectId,
-      ref : "Prescription"
-    }],
+    appointments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Appointment",
+      },
+    ],
+
+    prescriptions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Prescription",
+      },
+    ],
 
     // 🔹 Medical Info
     medicalHistory: [
@@ -62,13 +89,14 @@ const patientSchema = new mongoose.Schema(
 
     bloodGroup: {
       type: String,
+      trim: true,
     },
 
-    height: Number, // in cm
-    weight: Number, // in kg
+    height: Number,
+    weight: Number,
 
     allergies: [String],
-    
+
     currentMedications: [
       {
         name: String,
@@ -76,19 +104,22 @@ const patientSchema = new mongoose.Schema(
       },
     ],
 
-    // 🔹 Optional (for future)
     emergencyContact: {
       name: String,
       relation: String,
       phone: String,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
 
 patientSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
+
   this.password = await bcrypt.hash(this.password, 10);
+
   next();
 });
 
@@ -97,4 +128,5 @@ patientSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 const Patient = mongoose.model("Patient", patientSchema);
+
 export default Patient;
