@@ -31,9 +31,9 @@ export default function FAQ() {
                         <div key={idx} className="bg-green-500 dark:bg-gray-800/50 rounded-lg overflow-hidden">
                             <button
                                 onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                                className={`w-full px-5 py-3 text-left flex justify-between items-center ${activeFaq === idx ? "bg-green-500 border-b border-white/50" : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700/30 dark:hover:bg-gray-700/50"} transition-colors`}
+                                className={`w-full px-5 py-3 text-left flex justify-between items-center transition-colors ${activeFaq === idx ? "bg-green-500 !text-white border-b border-white/50" : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700/30 dark:hover:bg-gray-700/50"}`}
                             >
-                                <span className="font-semibold text-gray-900 dark:text-white">{faq.question}</span>
+                                <span className={`font-semibold ${activeFaq === idx ? "text-white" : "text-gray-900 dark:text-white "}`}>{faq.question}</span>
                                 <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${activeFaq === idx ? 'rotate-180 text-white' : ''}`} />
                             </button>
                             {activeFaq === idx && (

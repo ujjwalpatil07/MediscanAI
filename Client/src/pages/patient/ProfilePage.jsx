@@ -352,58 +352,6 @@ export default function PatientProfile() {
         </div>
     );
 
-    // Editable Field Component - FIXED: memoized to prevent re-renders
-    const EditableField = React.memo(({ label, name, value, type = 'text', icon: Icon, required, rows, options, placeholder }) => {
-        const isTextarea = type === 'textarea';
-        const isSelect = type === 'select';
-
-        return (
-            <div className="flex flex-col sm:flex-row sm:items-start py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                <div className="flex items-center sm:w-1/3 mb-2 sm:mb-0">
-                    <Icon className="w-4 h-4 text-green-600 dark:text-green-400 mr-2 flex-shrink-0" />
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</span>
-                    {required && <span className="text-red-500 ml-1">*</span>}
-                </div>
-                <div className="sm:w-2/3">
-                    {isSelect ? (
-                        <select
-                            name={name}
-                            value={value || ''}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        >
-                            <option value="">Select {label}</option>
-                            {options?.map(opt => (
-                                <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>
-                            ))}
-                        </select>
-                    ) : isTextarea ? (
-                        <textarea
-                            name={name}
-                            value={value || ''}
-                            onChange={handleChange}
-                            rows={rows || 3}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-                        />
-                    ) : (
-                        <input
-                            type={type}
-                            name={name}
-                            value={value || ''}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-                        />
-                    )}
-                    {errors[name] && (
-                        <p className="text-xs text-red-500 mt-1">{errors[name]}</p>
-                    )}
-                </div>
-            </div>
-        );
-    });
-
     const SectionHeader = ({ title, icon: Icon }) => (
         <div className="flex items-center mb-4 pb-2 border-b-2 border-green-200 dark:border-green-800">
             <Icon className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
@@ -538,12 +486,12 @@ export default function PatientProfile() {
                                 </>
                             ) : (
                                 <>
-                                    <EditableField label="First Name" name="firstName" value={formData.firstName} icon={User} required />
-                                    <EditableField label="Last Name" name="lastName" value={formData.lastName} icon={User} required />
-                                    <EditableField label="Phone" name="mobile" value={formData.mobile} type="tel" icon={Phone} />
-                                    <EditableField label="Date of Birth" name="dob" value={formData.dob} type="date" icon={Calendar} />
-                                    <EditableField label="Gender" name="gender" value={formData.gender} type="select" icon={User} options={["male", "female", "other"]} />
-                                    <EditableField label="Address" name="address" value={formData.address} type="textarea" rows={2} icon={MapPin} />
+                                    <EditableField label="First Name" name="firstName" value={formData.firstName} icon={User} required handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Last Name" name="lastName" value={formData.lastName} icon={User} required handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Phone" name="mobile" value={formData.mobile} type="tel" icon={Phone} handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Date of Birth" name="dob" value={formData.dob} type="date" icon={Calendar} handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Gender" name="gender" value={formData.gender} type="select" icon={User} options={["male", "female", "other"]} handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Address" name="address" value={formData.address} type="textarea" rows={2} icon={MapPin} handleChange={handleChange} errors={errors} />
                                 </>
                             )}
                         </div>
@@ -559,9 +507,9 @@ export default function PatientProfile() {
                                 </>
                             ) : (
                                 <>
-                                    <EditableField label="Contact Name" name="emergencyContact.name" value={formData.emergencyContact?.name} icon={User} />
-                                    <EditableField label="Relation" name="emergencyContact.relation" value={formData.emergencyContact?.relation} icon={Users} />
-                                    <EditableField label="Phone" name="emergencyContact.phone" value={formData.emergencyContact?.phone} type="tel" icon={Phone} />
+                                    <EditableField label="Contact Name" name="emergencyContact.name" value={formData.emergencyContact?.name} icon={User} handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Relation" name="emergencyContact.relation" value={formData.emergencyContact?.relation} icon={Users} handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Phone" name="emergencyContact.phone" value={formData.emergencyContact?.phone} type="tel" icon={Phone} handleChange={handleChange} errors={errors} />
                                 </>
                             )}
                         </div>
@@ -600,9 +548,9 @@ export default function PatientProfile() {
                                 </>
                             ) : (
                                 <>
-                                    <EditableField label="Blood Group" name="bloodGroup" value={formData.bloodGroup} icon={Droplet} />
-                                    <EditableField label="Height (cm)" name="height" value={formData.height} type="number" icon={Ruler} />
-                                    <EditableField label="Weight (kg)" name="weight" value={formData.weight} type="number" icon={Weight} />
+                                    <EditableField label="Blood Group" name="bloodGroup" value={formData.bloodGroup} icon={Droplet} handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Height (cm)" name="height" value={formData.height} type="number" icon={Ruler} handleChange={handleChange} errors={errors} />
+                                    <EditableField label="Weight (kg)" name="weight" value={formData.weight} type="number" icon={Weight} handleChange={handleChange} errors={errors} />
                                     <EditableField
                                         label="Allergies"
                                         name="allergies"
@@ -611,6 +559,7 @@ export default function PatientProfile() {
                                         rows={2}
                                         icon={AlertCircle}
                                         placeholder="Separate allergies with commas, e.g., Penicillin, Pollen, Peanuts"
+                                        handleChange={handleChange} errors={errors}
                                     />
 
                                     {/* Current Medications */}
@@ -826,3 +775,66 @@ export default function PatientProfile() {
         </div>
     );
 }
+
+// Editable Field Component - FIXED: memoized to prevent re-renders
+const EditableField = React.memo(({ label,
+    name,
+    value,
+    type = 'text',
+    icon: Icon,
+    required,
+    rows,
+    options,
+    placeholder,
+    handleChange,
+    errors
+}) => {
+    const isTextarea = type === 'textarea';
+    const isSelect = type === 'select';
+
+    return (
+        <div className="flex flex-col sm:flex-row sm:items-start py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
+            <div className="flex items-center sm:w-1/3 mb-2 sm:mb-0">
+                <Icon className="w-4 h-4 text-green-600 dark:text-green-400 mr-2 flex-shrink-0" />
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</span>
+                {required && <span className="text-red-500 ml-1">*</span>}
+            </div>
+            <div className="sm:w-2/3">
+                {isSelect ? (
+                    <select
+                        name={name}
+                        value={value || ''}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                        <option value="">Select {label}</option>
+                        {options?.map(opt => (
+                            <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>
+                        ))}
+                    </select>
+                ) : isTextarea ? (
+                    <textarea
+                        name={name}
+                        value={value || ''}
+                        onChange={handleChange}
+                        rows={rows || 3}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+                    />
+                ) : (
+                    <input
+                        type={type}
+                        name={name}
+                        value={value || ''}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+                    />
+                )}
+                {errors[name] && (
+                    <p className="text-xs text-red-500 mt-1">{errors[name]}</p>
+                )}
+            </div>
+        </div>
+    );
+});
