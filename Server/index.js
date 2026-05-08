@@ -14,7 +14,8 @@ import aiRoutes from "./routes/patient/ai.routes.js";
 import doctorRoutes from "./routes/doctor.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import chatRoutes from "./routes/chat.routes.js"; // Add this import
+import chatRoutes from "./routes/chat.routes.js"; 
+import blogRoutes from "./routes/blog.routes.js";
 
 import { connectDB } from "./config/initDB.js";
 import { corsOptions } from "./config/cors.js";
@@ -57,6 +58,7 @@ app.get("/socket-status", (req, res) => {
   });
 });
 
+
 // ------------------- PATIENT ROUTES -----------------------
 app.use("/p/profile", patientProfileRoutes);
 app.use("/p/appointment", appointmentRoutes);
@@ -69,7 +71,9 @@ app.use("/p/ai", aiRoutes);
 app.use("/doctor", doctorRoutes);
 app.use("/auth", authRoutes);
 app.use("/upload", uploadRoutes);
-app.use("/chat", chatRoutes); // Add chat routes
+app.use("/chat", chatRoutes); 
+app.use("/blogs", blogRoutes);
+
 
 // Health check route
 app.get("/", (req, res) => {

@@ -32,7 +32,8 @@ export default function NewChatModal({ isOpen, onClose, onSelectPatient }) {
     setLoading(true);
     try {
       // Use the doctor's patients endpoint we already built
-      const response = await api.get("/doctor/patients?limit=100");
+      const response = await api.get("/doctor/patients");
+      console.log(response);
       setPatients(response.data.data?.patients || []);
     } catch (error) {
       console.error("Failed to fetch patients:", error);

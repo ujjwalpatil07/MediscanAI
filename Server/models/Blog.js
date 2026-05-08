@@ -1,3 +1,4 @@
+// models/Blog.js - Add these fields if not already present
 import mongoose from "mongoose";
 
 const blogSchema = new mongoose.Schema(
@@ -68,35 +69,91 @@ const blogSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
     likedBy: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Patient",
-      },
-    ],
-    commentsList: [
       {
         userId: {
           type: mongoose.Schema.Types.ObjectId,
-          refPath: "commentsList.userModel",
+          refPath: "likedBy.userModel",
         },
         userModel: {
           type: String,
           enum: ["Patient", "Doctor"],
         },
-        userName: String,
-        comment: String,
-        date: {
+        likedAt: {
           type: Date,
           default: Date.now,
         },
       },
     ],
+
+    commentsList: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          refPath: "commentsList.userModel",
+          required: true,
+        },
+        userModel: {
+          type: String,
+          enum: ["Patient", "Doctor"],
+          required: true,
+        },
+        userName: {
+          type: String,
+          required: true,
+        },
+        userAvatar: {
+          type: String,
+        },
+        comment: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+        likes: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+          },
+        ],
+        replies: [
+          {
+            userId: {
+              type: mongoose.Schema.Types.ObjectId,
+              refPath: "commentsList.replies.userModel",
+            },
+            userModel: String,
+            userName: String,
+            comment: String,
+            createdAt: {
+              type: Date,
+              default: Date.now,
+            },
+          },
+        ],
+      },
+    ],
+
+    shareCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );
 
-// Auto-set published date when status changes to published
+// ✅ Add indexes for better query performance
+blogSchema.index({ status: 1, publishedDate: -1 });
+blogSchema.index({ category: 1 });
+blogSchema.index({ tags: 1 });
+blogSchema.index({ "commentsList.createdAt": -1 });
+
+// Auto-set published date and calculate read time
 blogSchema.pre("save", function (next) {
   if (
     this.isModified("status") &&
@@ -108,19 +165,13 @@ blogSchema.pre("save", function (next) {
 
   // Calculate read time based on content length (avg 200 words per minute)
   if (this.isModified("content")) {
-    const wordCount = this.content.split(/\s+/).length;
-    const minutes = Math.ceil(wordCount / 200);
-    this.readTime = `${minutes} min`;
+    const wordCount = this.content.replace(/<[^>]*>/g, "").split(/\s+/).length;
+    const minutes = Math.max(1, Math.ceil(wordCount / 200));
+    this.readTime = `${minutes} min read`;
   }
 
   next();
 });
-
-blogSchema.index({ authorId: 1, status: 1 });
-blogSchema.index({ category: 1 });
-blogSchema.index({ tags: 1 });
-blogSchema.index({ status: 1, publishedDate: -1 });
-blogSchema.index({ views: -1 });
 
 const Blog = mongoose.model("Blog", blogSchema);
 export default Blog;

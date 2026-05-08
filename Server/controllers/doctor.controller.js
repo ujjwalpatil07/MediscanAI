@@ -410,7 +410,7 @@ export const updateAppointmentStatus = async (req, res) => {
 // Get all patients for doctor
 export const getPatients = async (req, res) => {
   const doctorId = req.user.id;
-  const { search, status, sort = "newest", page = 1, limit = 10 } = req.query;
+  // const { search, sort = "newest", page = 1, limit = 10 } = req.query;
 
   // Get unique patient IDs from appointments
   const patientIds = await Appointment.distinct("patientId", { doctorId });
@@ -501,6 +501,59 @@ export const getPatients = async (req, res) => {
         totalItems: total,
         itemsPerPage: parseInt(limit),
       },
+    },
+  });
+};
+
+export const getDoctorPatients = async (req, res) => {
+  const doctorId = req.user.id;
+
+  // Find all unique patient IDs from this doctor's appointments
+  const patientIds = await Appointment.distinct("patientId", {
+    doctorId,
+  }); 
+
+  // Fetch patient details (without passwords)
+  const patients = await Patient.find({
+    _id: { $in: patientIds },
+  })
+    .select("-password")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // Get last appointment and total appointments for each patient
+  const patientsWithDetails = await Promise.all(
+    patients.map(async (patient) => {
+      const lastAppointment = await Appointment.findOne({
+        doctorId,
+        patientId: patient._id,
+      })
+        .sort({ appointmentDate: -1 })
+        .select("appointmentDate appointmentTime status appointmentType")
+        .lean();
+
+      const totalAppointments = await Appointment.countDocuments({
+        doctorId,
+        patientId: patient._id,
+      });
+
+      return {
+        ...patient,
+        lastVisit: lastAppointment?.appointmentDate || null,
+        lastAppointmentTime: lastAppointment?.appointmentTime || null,
+        lastStatus: lastAppointment?.status || null,
+        lastAppointmentType: lastAppointment?.appointmentType || null,
+        totalAppointments,
+      };
+    }),
+  );
+
+  return res.status(httpStatus.OK).json({
+    success: true,
+    message: "Patients fetched successfully",
+    data: {
+      patients: patientsWithDetails,
+      total: patientsWithDetails.length,
     },
   });
 };

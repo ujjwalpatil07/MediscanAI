@@ -1,39 +1,36 @@
+// components/doctor/appointments/AppointmentStatsCard.jsx
 import PropTypes from "prop-types";
-import { Calendar, Clock, CheckCircle, XCircle, TrendingUp } from "lucide-react";
+import { Calendar, Clock, CheckCircle, XCircle } from "lucide-react";
 
 export default function AppointmentStatsCard({ stats }) {
   const statItems = [
     {
       label: "Total Appointments",
-      value: stats.total,
+      value: stats.total || 0,
       icon: Calendar,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-900/20",
-      change: "+12%",
     },
     {
-      label: "Upcoming",
-      value: stats.upcoming,
+      label: "Confirmed",
+      value: stats.confirmed || stats.upcoming || 0,
       icon: Clock,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-900/20",
-      change: "+8%",
     },
     {
       label: "Completed",
-      value: stats.completed,
+      value: stats.completed || 0,
       icon: CheckCircle,
       color: "text-green-600 dark:text-green-400",
       bg: "bg-green-50 dark:bg-green-900/20",
-      change: "+15%",
     },
     {
       label: "Cancelled",
-      value: stats.cancelled,
+      value: stats.cancelled || 0,
       icon: XCircle,
       color: "text-red-600 dark:text-red-400",
       bg: "bg-red-50 dark:bg-red-900/20",
-      change: "-3%",
     },
   ];
 
@@ -50,10 +47,6 @@ export default function AppointmentStatsCard({ stats }) {
               <div className={`p-2 rounded-lg ${item.bg}`}>
                 <Icon className={`w-5 h-5 ${item.color}`} />
               </div>
-              <span className="flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
-                <TrendingUp className="w-3 h-3" />
-                {item.change}
-              </span>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
               {item.value}
@@ -70,9 +63,10 @@ export default function AppointmentStatsCard({ stats }) {
 
 AppointmentStatsCard.propTypes = {
   stats: PropTypes.shape({
-    total: PropTypes.number.isRequired,
-    upcoming: PropTypes.number.isRequired,
-    completed: PropTypes.number.isRequired,
-    cancelled: PropTypes.number.isRequired,
+    total: PropTypes.number,
+    confirmed: PropTypes.number,
+    upcoming: PropTypes.number,
+    completed: PropTypes.number,
+    cancelled: PropTypes.number,
   }).isRequired,
 };

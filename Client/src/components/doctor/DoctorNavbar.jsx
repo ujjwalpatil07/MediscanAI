@@ -12,18 +12,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import AuthContext from "../../context/AuthContext";
+import { useThemeContext } from "../../context/ThemeContext";
 
 export default function DoctorNavbar({ onMenuClick }) {
-  const [darkMode, setDarkMode] = useState(
-    document.documentElement.classList.contains("dark")
-  );
   const navigate = useNavigate(); 
   const {loginUser} = useContext(AuthContext)
+  const { theme, toggleTheme } = useThemeContext();
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark");
-  };
 
   return (
     <header className="sticky top-0 z-30 bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 h-16">
@@ -57,11 +52,11 @@ export default function DoctorNavbar({ onMenuClick }) {
           </div>
 
           <button
-            onClick={toggleDarkMode}
+            onClick={toggleTheme}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 transition"
-            title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            title={theme == "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
-            {darkMode ? (
+            {theme == "dark" ? (
               <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             ) : (
               <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />

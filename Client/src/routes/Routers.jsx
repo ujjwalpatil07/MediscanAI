@@ -35,6 +35,8 @@ import Blog from "../pages/doctor/Blog";
 import AboutUs from "../pages/AboutUs";
 import ContactUs from "../pages/ContactUs";
 import PatientMessages from "../pages/patient/Messages";
+import Blogs from "../pages/patient/Blogs";
+import BlogView from "../pages/doctor/BlogView";
 
 export default function Routers() {
 
@@ -50,6 +52,8 @@ export default function Routers() {
       <Route path="/home" element={<PatientLayout><HomePage /></PatientLayout>} />
       <Route path="/about" element={<PatientLayout><AboutUs /></PatientLayout>} />
       <Route path="/contact" element={<PatientLayout><ContactUs /></PatientLayout>} />
+      <Route path="/blogs" element={<PatientLayout><Blogs /></PatientLayout>} />
+      <Route path="/blogs/:blogId" element={<PatientLayout><BlogView /></PatientLayout>} />
 
       <Route path="/login" element={<RoleSelector />} />
       <Route path="/signup" element={<RoleSelector />} />

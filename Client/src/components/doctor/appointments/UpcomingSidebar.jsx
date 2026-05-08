@@ -1,14 +1,16 @@
+// components/doctor/appointments/UpcomingSidebar.jsx
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { Clock, Calendar, ChevronRight, Video, Building2 } from "lucide-react";
+import { Clock, Calendar, ChevronRight, Video, Building2, Loader } from "lucide-react";
 
-export default function UpcomingSidebar({ upcomingAppointments }) {
+export default function UpcomingSidebar({ upcomingAppointments, loading }) {
   const [showAll, setShowAll] = useState(false);
   const displayAppointments = showAll
     ? upcomingAppointments
     : upcomingAppointments.slice(0, 5);
 
   const formatTimeRemaining = (dateString, time) => {
+    if (!dateString || !time) return "Date not set";
     const appointmentDateTime = new Date(`${dateString}T${time}`);
     const now = new Date();
     const diff = appointmentDateTime - now;
@@ -28,17 +30,35 @@ export default function UpcomingSidebar({ upcomingAppointments }) {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "Date not set";
     const options = { month: "short", day: "numeric", year: "numeric" };
     return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
   const formatTime = (time) => {
+    if (!time) return "Time not set";
     const [hours, minutes] = time.split(":");
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour > 12 ? hour - 12 : hour;
     return `${displayHour}:${minutes} ${ampm}`;
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-5 sticky top-20">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Upcoming
+          </h3>
+        </div>
+        <div className="flex justify-center py-8">
+          <Loader className="w-6 h-6 text-green-600 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-5 sticky top-20">
@@ -63,16 +83,15 @@ export default function UpcomingSidebar({ upcomingAppointments }) {
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                      {appointment.patient.firstName[0]}
-                      {appointment.patient.lastName[0]}
+                      {appointment.patient?.firstName?.[0] || '?'}
+                      {appointment.patient?.lastName?.[0] || ''}
                     </span>
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate pr-2">
-                        {appointment.patient.firstName}{" "}
-                        {appointment.patient.lastName}
+                        {appointment.patient?.firstName || "Unknown"} {appointment.patient?.lastName || ""}
                       </h4>
                       <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                         {appointment.appointmentType === "online" ? (
@@ -136,4 +155,9 @@ export default function UpcomingSidebar({ upcomingAppointments }) {
 
 UpcomingSidebar.propTypes = {
   upcomingAppointments: PropTypes.array.isRequired,
+  loading: PropTypes.bool,
+};
+
+UpcomingSidebar.defaultProps = {
+  loading: false,
 };

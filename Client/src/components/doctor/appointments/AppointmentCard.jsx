@@ -1,3 +1,4 @@
+// components/doctor/appointments/AppointmentCard.jsx
 import { useState } from "react";
 import PropTypes from "prop-types";
 import {
@@ -16,10 +17,11 @@ import {
   MessageCircle,
   FileText,
   Stethoscope,
+  Loader,
 } from "lucide-react";
 
 const statusConfig = {
-  upcoming: {
+  confirmed: {
     bg: "bg-blue-50 dark:bg-blue-900/20",
     text: "text-blue-600 dark:text-blue-400",
     border: "border-l-blue-500",
@@ -37,6 +39,12 @@ const statusConfig = {
     border: "border-l-red-500",
     badge: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
   },
+  "no-show": {
+    bg: "bg-orange-50 dark:bg-orange-900/20",
+    text: "text-orange-600 dark:text-orange-400",
+    border: "border-l-orange-500",
+    badge: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400",
+  },
 };
 
 const paymentStatusConfig = {
@@ -45,12 +53,12 @@ const paymentStatusConfig = {
   failed: "text-red-600 dark:text-red-400",
 };
 
-export default function AppointmentCard({ appointment }) {
+export default function AppointmentCard({ appointment, onStatusUpdate }) {
   const [expanded, setExpanded] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const status = statusConfig[appointment.status];
+  const status = statusConfig[appointment.status] || statusConfig.confirmed;
   const TypeIcon = appointment.appointmentType === "online" ? Video : Building2;
 
   const formatDate = (dateString) => {
@@ -64,6 +72,7 @@ export default function AppointmentCard({ appointment }) {
   };
 
   const formatTime = (time) => {
+    if (!time) return "Time not set";
     const [hours, minutes] = time.split(":");
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? "PM" : "AM";
@@ -72,24 +81,23 @@ export default function AppointmentCard({ appointment }) {
   };
 
   const getPatientInitials = (firstName, lastName) => {
-    return `${firstName[0]}${lastName[0]}`;
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`;
   };
 
-  const handleAccept = async () => {
+  const handleStatusChange = async (newStatus) => {
     setActionLoading(true);
-    setTimeout(() => {
+    try {
+      await onStatusUpdate(appointment._id, newStatus);
+      setShowActions(false);
+    } catch (error) {
+      console.error("Error updating status:", error);
+    } finally {
       setActionLoading(false);
-      alert("Appointment accepted");
-    }, 500);
+    }
   };
 
-  const handleReject = async () => {
-    setActionLoading(true);
-    setTimeout(() => {
-      setActionLoading(false);
-      alert("Appointment rejected");
-    }, 500);
-  };
+  // Only show action buttons for confirmed appointments
+  const showActionButtons = appointment.status === "confirmed";
 
   return (
     <div
@@ -102,8 +110,8 @@ export default function AppointmentCard({ appointment }) {
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-100 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
                 <span className="text-lg font-semibold text-gray-600 dark:text-gray-400">
                   {getPatientInitials(
-                    appointment.patient.firstName,
-                    appointment.patient.lastName
+                    appointment.patient?.firstName,
+                    appointment.patient?.lastName
                   )}
                 </span>
               </div>
@@ -117,27 +125,28 @@ export default function AppointmentCard({ appointment }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-                  {appointment.patient.firstName}{" "}
-                  {appointment.patient.lastName}
+                  {appointment.patient?.firstName || "Unknown"} {appointment.patient?.lastName || ""}
                 </h3>
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-medium ${status.badge}`}
                 >
-                  {appointment.status.charAt(0).toUpperCase() +
-                    appointment.status.slice(1)}
+                  {appointment.status === "no-show" ? "No Show" :
+                    appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                 </span>
                 <span
                   className={`text-xs font-medium ${paymentStatusConfig[appointment.paymentStatus]}`}
                 >
-                  • {appointment.paymentStatus.charAt(0).toUpperCase() + appointment.paymentStatus.slice(1)}
+                  • {appointment.paymentStatus?.charAt(0).toUpperCase() + appointment.paymentStatus?.slice(1) || "Paid"}
                 </span>
               </div>
 
-              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                <span>{appointment.patient.age} yrs</span>
-                <span>•</span>
-                <span>{appointment.patient.gender}</span>
-              </div>
+              {appointment.patient?.age && appointment.patient?.gender && (
+                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                  <span>{appointment.patient.age} yrs</span>
+                  <span>•</span>
+                  <span>{appointment.patient.gender}</span>
+                </div>
+              )}
 
               <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -190,38 +199,49 @@ export default function AppointmentCard({ appointment }) {
               </button>
 
               {showActions && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 py-1 z-20">
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4" /> Message Patient
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> View Full Details
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
-                    <Stethoscope className="w-4 h-4" /> Start Consultation
-                  </button>
-                </div>
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowActions(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 py-1 z-20">
+                    <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4" /> Message Patient
+                    </button>
+                    <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                      <FileText className="w-4 h-4" /> View Full Details
+                    </button>
+                    {appointment.appointmentType === "online" && (
+                      <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700 flex items-center gap-2">
+                        <Stethoscope className="w-4 h-4" /> Start Consultation
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </div>
 
-            {appointment.status === "upcoming" && (
+            {showActionButtons && (
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleAccept}
+                  onClick={() => handleStatusChange("completed")}
                   disabled={actionLoading}
-                  className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition"
-                  title="Accept Appointment"
+                  className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition disabled:opacity-50"
+                  title="Mark as Completed"
                 >
                   <Check className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={handleReject}
+                  onClick={() => handleStatusChange("cancelled")}
                   disabled={actionLoading}
-                  className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition"
-                  title="Reject Appointment"
+                  className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition disabled:opacity-50"
+                  title="Cancel Appointment"
                 >
                   <X className="w-5 h-5" />
                 </button>
+                {actionLoading && (
+                  <Loader className="w-5 h-5 text-green-600 animate-spin" />
+                )}
               </div>
             )}
           </div>
@@ -235,7 +255,7 @@ export default function AppointmentCard({ appointment }) {
                   Symptoms
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {appointment.symptoms}
+                  {appointment.symptoms || "No symptoms provided"}
                 </p>
               </div>
               <div>
@@ -245,11 +265,11 @@ export default function AppointmentCard({ appointment }) {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Mail className="w-3 h-3" />
-                    {appointment.patient.email}
+                    {appointment.patient?.email || "N/A"}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Phone className="w-3 h-3" />
-                    {appointment.patient.phone}
+                    {appointment.patient?.mobile || appointment.patient?.phone || "N/A"}
                   </div>
                 </div>
               </div>
@@ -285,22 +305,23 @@ AppointmentCard.propTypes = {
   appointment: PropTypes.shape({
     _id: PropTypes.string.isRequired,
     patient: PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      firstName: PropTypes.string.isRequired,
-      lastName: PropTypes.string.isRequired,
-      age: PropTypes.number.isRequired,
-      gender: PropTypes.string.isRequired,
-      email: PropTypes.string.isRequired,
-      phone: PropTypes.string.isRequired,
-    }).isRequired,
+      firstName: PropTypes.string,
+      lastName: PropTypes.string,
+      age: PropTypes.number,
+      gender: PropTypes.string,
+      email: PropTypes.string,
+      phone: PropTypes.string,
+      mobile: PropTypes.string,
+    }),
     appointmentDate: PropTypes.string.isRequired,
     appointmentTime: PropTypes.string.isRequired,
     appointmentType: PropTypes.string.isRequired,
     status: PropTypes.string.isRequired,
     paymentStatus: PropTypes.string.isRequired,
     consultationFee: PropTypes.number.isRequired,
-    symptoms: PropTypes.string.isRequired,
+    symptoms: PropTypes.string,
     diagnosis: PropTypes.string,
     notes: PropTypes.string,
   }).isRequired,
+  onStatusUpdate: PropTypes.func.isRequired,
 };

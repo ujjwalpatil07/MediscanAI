@@ -3,7 +3,7 @@ import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
 // Helper function to upload buffer to Cloudinary
-const uploadToCloudinary = (buffer, options) => {
+export const uploadToCloudinary = (buffer, options) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       options,
