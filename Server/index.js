@@ -17,6 +17,8 @@ import uploadRoutes from "./routes/upload.routes.js";
 import chatRoutes from "./routes/chat.routes.js"; 
 import blogRoutes from "./routes/blog.routes.js";
 
+import publicRoutes from "./routes/public.routes.js";
+
 import { connectDB } from "./config/initDB.js";
 import { corsOptions } from "./config/cors.js";
 
@@ -66,12 +68,13 @@ app.use("/p/prescription", prescriptionRoutes);
 app.use("/p/medical-record", medicalRecordRoutes);
 app.use("/ai", aiRoutes);
 
-
 app.use("/doctor", doctorRoutes);
 app.use("/auth", authRoutes);
 app.use("/upload", uploadRoutes);
 app.use("/chat", chatRoutes); 
 app.use("/blogs", blogRoutes);
+
+app.use("/public", publicRoutes);
 
 
 // Health check route
