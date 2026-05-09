@@ -1,3 +1,9 @@
+import dns from "node:dns";
+
+// 🔥 MUST BE FIRST
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+dns.setDefaultResultOrder("ipv4first");
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
