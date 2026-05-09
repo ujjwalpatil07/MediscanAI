@@ -56,22 +56,49 @@ async def wound_analysis(
 
 @router.post("/stream-analyze")
 async def stream_analyze(request: Request):
-    payload = await request.json()
-    symptoms = payload.get("symptoms", "")
-    res = await analyze_symptoms(symptoms)
-
-    async def event_generator():
-        if res.get("status") != "success":
-            yield json.dumps({"type":"error","message": res.get("message") or res.get("detail", "Unknown error")}) + "\n"
-            return
-        full_text = res.get("analysis", "")
-        yield json.dumps({"type":"meta","model": res.get("model_used")}) + "\n"
-        for chunk in chunk_text(full_text):
-            yield json.dumps({"type":"chunk","chunk":chunk}) + "\n"
-            await asyncio.sleep(0.12)
-        yield json.dumps({"type":"meta","status":"done"}) + "\n"
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    try:
+        payload = await request.json()
+        symptoms = payload.get("symptoms", "")
+        
+        if not symptoms or not symptoms.strip():
+            return StreamingResponse(
+                generator_error("Symptoms are required"),
+                media_type="text/event-stream"
+            )
+        
+        res = await analyze_symptoms(symptoms)
+        
+        async def event_generator():
+            if res.get("status") != "success":
+                yield f'data: {json.dumps({"type":"error","message": res.get("message", "Unknown error")})}\n\n'
+                return
+            
+            full_text = res.get("analysis", "")
+            if not full_text:
+                yield f'data: {json.dumps({"type":"error","message": "No analysis generated"})}\n\n'
+                return
+            
+            # Send model info with proper formatting
+            yield f'data: {json.dumps({"type":"meta","model": res.get("model_used", "unknown")})}\n\n'
+            
+            # Stream in smaller chunks for better readability
+            chunks = chunk_text(full_text)
+            for chunk in chunks:
+                # Each chunk on its own line with proper SSE format
+                yield f'data: {json.dumps({"type":"chunk","chunk": chunk})}\n\n'
+                await asyncio.sleep(0.05)  # Slight delay for smooth streaming
+            
+            # Send completion
+            yield f'data: {json.dumps({"type":"meta","status":"done"})}\n\n'
+        
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+        
+    except Exception as e:
+        logger.exception("Stream analysis error")
+        return StreamingResponse(
+            generator_error(str(e)),
+            media_type="text/event-stream"
+        )
 
 
 @router.post("/stream-wound-analysis")
@@ -118,20 +145,47 @@ async def stream_wound_analysis(image: UploadFile = File(...), description: str 
 
 
 def chunk_text(text: str):
+    """Split text into smaller, readable chunks"""
     if not text:
         return []
+    
+    # Split by sentences for natural breaks
     import re
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    sentences = re.split(r'(?<=[.!?])\s+', text)
     chunks = []
-    for line in lines:
-        parts = re.findall(r'[^.!?]+[.!?]?', line)
-        if not parts:
-            parts = [line]
-        for p in parts:
-            p = p.strip()
-            if p:
-                chunks.append(p)
-    if not chunks:
-        for i in range(0, len(text), 180):
-            chunks.append(text[i:i+180])
+    current_chunk = ""
+    
+    for sentence in sentences:
+        # If adding this sentence would exceed chunk size, yield current chunk
+        if len(current_chunk) + len(sentence) > 200:
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            current_chunk = sentence
+        else:
+            current_chunk += (" " + sentence if current_chunk else sentence)
+    
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+    
+    # If still no chunks or chunks are too large, split by words
+    if not chunks or any(len(chunk) > 300 for chunk in chunks):
+        words = text.split()
+        chunks = []
+        current_chunk = ""
+        
+        for word in words:
+            if len(current_chunk) + len(word) < 150:
+                current_chunk += (" " + word if current_chunk else word)
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk)
+                current_chunk = word
+        
+        if current_chunk:
+            chunks.append(current_chunk)
+    
     return chunks
+
+async def generator_error(message: str):
+    """Generate error response for streaming"""
+    yield f'data: {json.dumps({"type":"error","message": message})}\n\n'

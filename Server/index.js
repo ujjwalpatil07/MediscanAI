@@ -15,7 +15,7 @@ import patientProfileRoutes from "./routes/patient/profile.routes.js";
 import appointmentRoutes from "./routes/patient/appointment.routes.js";
 import prescriptionRoutes from "./routes/patient/prescription.routes.js";
 import medicalRecordRoutes from "./routes/patient/medicalRecord.routes.js";
-import aiRoutes from "./routes/patient/ai.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
 
 import doctorRoutes from "./routes/doctor.routes.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -33,7 +33,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
@@ -72,8 +72,7 @@ app.use("/p/profile", patientProfileRoutes);
 app.use("/p/appointment", appointmentRoutes);
 app.use("/p/prescription", prescriptionRoutes);
 app.use("/p/medical-record", medicalRecordRoutes);
-app.use("/p/ai", aiRoutes);
-
+app.use("/ai", aiRoutes);
 
 app.use("/doctor", doctorRoutes);
 app.use("/auth", authRoutes);

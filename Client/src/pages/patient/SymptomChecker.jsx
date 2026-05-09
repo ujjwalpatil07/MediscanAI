@@ -1,614 +1,744 @@
-// SymptomChecker.jsx
-
-import React, { useState, useEffect, useRef } from 'react';
+// Client/src/pages/patient/SymptomAnalysis.jsx
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Activity,
-  Brain,
-  AlertCircle,
-  Shield,
-  Save,
-  History,
-  Trash2,
-  Eye,
-  ChevronRight,
-  Loader2,
   Stethoscope,
-  Heart,
-  Smile,
-  Brain as BrainIcon,
-  Thermometer,
+  Brain,
   Clock,
-  AlertTriangle,
+  Loader,
+  Sparkles,
+  Zap,
+  Microscope,
+  Ambulance,
   CheckCircle,
-  XCircle
-} from 'lucide-react';
-import { doctorsData } from '../../utils/data';
+  ThumbsUp,
+  ThumbsDown,
+  Flag,
+  RefreshCw,
+  History,
+  ShieldCheck,
+  HandHeart,
+  Flower2,
+  Target,
+  Upload,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  X,
+  Camera,
+  AlertTriangle,
+  Copy,
+  Save,
+} from "lucide-react";
+import { aiService } from "../../services/ai.service";
 
-export default function SymptomChecker() {
-  const [symptoms, setSymptoms] = useState('');
-  const [loading, setLoading] = useState(false);
+const SymptomAnalysis = () => {
+  // State declarations
+  const [activeMode, setActiveMode] = useState("symptom"); // symptom or wound
+  const [symptoms, setSymptoms] = useState("");
+  const [woundImage, setWoundImage] = useState(null);
+  const [woundDescription, setWoundDescription] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
   const [analysis, setAnalysis] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("conditions");
   const [history, setHistory] = useState([]);
-  const [selectedHistory, setSelectedHistory] = useState(null);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [savedAnalyses, setSavedAnalyses] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
-  const resultRef = useRef(null);
-  const textareaRef = useRef(null);
+  const resultsRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // Load history from localStorage on mount
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('symptomHistory');
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory));
-    }
-  }, []);
-
-  // Save history to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('symptomHistory', JSON.stringify(history));
-  }, [history]);
-
-  // Symptom chips for quick input
-  const symptomChips = [
-    { label: 'Fever', icon: Thermometer },
-    { label: 'Headache', icon: BrainIcon },
-    { label: 'Chest Pain', icon: Heart },
-    { label: 'Tooth Pain', icon: Smile },
-    { label: 'Cough', icon: Activity },
-    { label: 'Fatigue', icon: Activity }
-  ];
-
-  // Mock AI Analysis Function with keyword mapping
-  const analyzeSymptoms = async (symptomText) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    const text = symptomText.toLowerCase();
-
-    // Determine doctor specialty and conditions based on keywords
-    let specialty = 'General Physician';
-    let conditions = [];
-    let recommendations = [];
-    let severity = 'Low';
-
-    // Chest pain related
-    if (text.includes('chest') || text.includes('heart') || text.includes('palpitations')) {
-      specialty = 'Cardiologist';
-      conditions = [
-        {
-          name: 'Musculoskeletal Chest Pain',
-          description: 'Pain from chest wall muscles or ribs, often worsens with movement.',
-          severity: 'Low'
-        },
-        {
-          name: 'Anxiety Related Chest Pain',
-          description: 'Stress-induced chest discomfort, often伴有 shortness of breath.',
-          severity: 'Medium'
-        },
-        {
-          name: 'Angina',
-          description: 'Reduced blood flow to the heart, often triggered by physical activity.',
-          severity: 'High'
-        }
-      ];
-      recommendations = [
-        'Seek immediate medical attention if pain is severe or伴有 shortness of breath',
-        'Avoid strenuous activities until evaluated by a doctor',
-        'Keep a record of when the pain occurs and what triggers it'
-      ];
-      severity = 'Medium';
-    }
-    // Tooth related
-    else if (text.includes('tooth') || text.includes('dental') || text.includes('gum')) {
-      specialty = 'Dentist';
-      conditions = [
-        {
-          name: 'Dental Caries (Cavity)',
-          description: 'Tooth decay that can cause pain and sensitivity to hot/cold.',
-          severity: 'Medium'
-        },
-        {
-          name: 'Gingivitis',
-          description: 'Gum inflammation causing redness, swelling, and bleeding.',
-          severity: 'Low'
-        },
-        {
-          name: 'Dental Abscess',
-          description: 'Pocket of pus from bacterial infection, causing severe pain.',
-          severity: 'High'
-        }
-      ];
-      recommendations = [
-        'Rinse mouth with warm salt water',
-        'Avoid very hot or cold foods',
-        'Schedule a dental appointment as soon as possible',
-        'Use over-the-counter pain relievers if needed'
-      ];
-      severity = 'Medium';
-    }
-    // Headache related
-    else if (text.includes('headache') || text.includes('migraine') || text.includes('head pain')) {
-      specialty = 'Neurologist';
-      conditions = [
-        {
-          name: 'Tension Headache',
-          description: 'Mild to moderate pain described as a tight band around the head.',
-          severity: 'Low'
-        },
-        {
-          name: 'Migraine',
-          description: 'Moderate to severe throbbing pain, often on one side of the head.',
-          severity: 'Medium'
-        },
-        {
-          name: 'Cluster Headache',
-          description: 'Severe, recurring headaches that occur in cyclical patterns.',
-          severity: 'High'
-        }
-      ];
-      recommendations = [
-        'Rest in a quiet, dark room',
-        'Apply cold or warm compresses to head/neck',
-        'Stay hydrated and avoid skipping meals',
-        'Keep a headache diary to identify triggers'
-      ];
-      severity = 'Low to Medium';
-    }
-    // Fever related
-    else if (text.includes('fever') || text.includes('temperature') || text.includes('chills')) {
-      specialty = 'General Physician';
-      conditions = [
-        {
-          name: 'Viral Infection',
-          description: 'Common cause of fever, usually resolves within 3-7 days.',
-          severity: 'Low to Medium'
-        },
-        {
-          name: 'Bacterial Infection',
-          description: 'May require antibiotics; Watch for persistent high fever.',
-          severity: 'Medium'
-        },
-        {
-          name: 'Urinary Tract Infection',
-          description: 'Often accompanied by burning sensation during urination.',
-          severity: 'Medium'
-        }
-      ];
-      recommendations = [
-        'Stay hydrated with water and electrolytes',
-        'Rest and monitor temperature regularly',
-        'Use fever reducers if needed (consult doctor for proper dosage)',
-        'Seek care if fever exceeds 103°F (39.4°C) or lasts >3 days'
-      ];
-      severity = 'Variable';
-    }
-    // General/default response
-    else {
-      specialty = 'General Physician';
-      conditions = [
-        {
-          name: 'Viral Syndrome',
-          description: 'Common viral infection that typically resolves with rest.',
-          severity: 'Low'
-        },
-        {
-          name: 'Stress Related Symptoms',
-          description: 'Physical manifestations of stress and anxiety.',
-          severity: 'Low'
-        }
-      ];
-      recommendations = [
-        'Get adequate rest (7-9 hours of sleep)',
-        'Stay hydrated and maintain a balanced diet',
-        'Monitor symptoms for 24-48 hours',
-        'Consult a doctor if symptoms worsen or persist'
-      ];
-      severity = 'Low';
-    }
-
-    // Find matching doctor from doctorsData
-    const matchingDoctor = doctorsData.find(
-      doc => doc.specialty.toLowerCase() === specialty.toLowerCase()
-    );
-
-    return {
-      conditions,
-      recommendedSpecialty: specialty,
-      recommendedDoctor: matchingDoctor || {
-        id: 0,
-        name: 'Dr. Available Specialist',
-        specialty: specialty,
-        experience: '10+ years',
-        image: 'https://via.placeholder.com/80'
-      },
-      recommendations,
-      severity,
-      analysisDate: new Date().toISOString()
-    };
+  const severityColors = {
+    low: { bg: "bg-green-50 dark:bg-green-900/20", text: "text-green-700 dark:text-green-400", border: "border-green-200 dark:border-green-800" },
+    moderate: { bg: "bg-yellow-50 dark:bg-yellow-900/20", text: "text-yellow-700 dark:text-yellow-400", border: "border-yellow-200 dark:border-yellow-800" },
+    high: { bg: "bg-orange-50 dark:bg-orange-900/20", text: "text-orange-700 dark:text-orange-400", border: "border-orange-200 dark:border-orange-800" },
+    critical: { bg: "bg-red-50 dark:bg-red-900/20", text: "text-red-700 dark:text-red-400", border: "border-red-200 dark:border-red-800" }
   };
+
+  // Fetch analysis history
+  const fetchHistory = useCallback(async () => {
+    setLoadingHistory(true);
+    try {
+      const response = await aiService.getAnalysisHistory(historyPage, 10, "all");
+      if (response.success) {
+        setHistory(response.data);
+        setHistoryTotal(response.pagination.totalItems);
+      }
+    } catch (err) {
+      console.error("Failed to fetch history:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [historyPage]);
+
+  useEffect(() => {
+    if (showHistory) {
+      fetchHistory();
+    }
+  }, [showHistory, historyPage, fetchHistory]);
 
   // Handle symptom analysis
   const handleAnalyze = async () => {
-    if (!symptoms.trim()) return;
+    if (!symptoms.trim()) {
+      setError("Please describe your symptoms");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
 
     setLoading(true);
-    try {
-      const result = await analyzeSymptoms(symptoms);
-      setAnalysis(result);
+    setError(null);
+    setAnalysis(null);
+    setStreamingText("");
 
-      // Scroll to results
-      setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    } catch (error) {
-      console.error('Analysis failed:', error);
+    try {
+      const response = await aiService.analyzeSymptoms(symptoms);
+      if (response.success) {
+        setAnalysis(response.data);
+      } else {
+        setError(response.message || "Analysis failed");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to connect to server");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle save to history
-  const handleSaveToHistory = () => {
-    if (!analysis) return;
+  const streamingTextRef = useRef('');
 
-    const historyEntry = {
-      id: Date.now(),
-      symptoms: symptoms,
-      conditions: analysis.conditions,
-      recommendedSpecialty: analysis.recommendedSpecialty,
-      topCondition: analysis.conditions[0]?.name || 'No conditions identified',
-      date: new Date().toISOString(),
-      analysis: analysis
-    };
+  const handleStreamAnalyze = async () => {
+    if (!symptoms.trim()) return;
 
-    setHistory(prev => [historyEntry, ...prev]);
-    alert('Analysis saved to history!');
+    setStreaming(true);
+    setError(null);
+    setAnalysis(null);
+    setStreamingText("");
+    streamingTextRef.current = "";
+
+    await aiService.streamSymptomAnalysis(
+      symptoms,
+      (chunk) => {
+        streamingTextRef.current += chunk;
+        setStreamingText(streamingTextRef.current);
+      },
+      (err) => {
+        console.error("Stream error:", err);
+        setError(err);
+        setStreaming(false);
+      }
+    );
   };
 
-  // Handle delete from history
-  const handleDeleteHistory = (id) => {
-    if (window.confirm('Are you sure you want to delete this entry?')) {
-      setHistory(prev => prev.filter(item => item.id !== id));
+  // Handle wound analysis
+  const handleWoundAnalysis = async () => {
+    if (!woundImage) {
+      setError("Please upload an image of the wound");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setAnalysis(null);
+
+    try {
+      const response = await aiService.analyzeWound(woundImage, woundDescription);
+      if (response?.success) {
+        setAnalysis({
+          woundResult: response.data.wound_result,
+          analysis: response.data.ai?.analysis,
+          urgency: {
+            level: response.data.wound_result.severity,
+            message: `Wound severity detected: ${response.data.wound_result.severity}. Area: ${Math.round(response.data.wound_result.wound_area)} pixels.`,
+            timeframe: "Immediate care needed for high severity wounds"
+          },
+          recommendedActions: [
+            "Clean the wound with antiseptic solution",
+            "Apply sterile bandage",
+            response.data.wound_result.severity === "high" && "Seek immediate medical attention",
+            "Monitor for signs of infection (redness, swelling, pus)"
+          ].filter(Boolean),
+          homeRemedies: [
+            "Keep the wound clean and dry",
+            "Change dressing daily",
+            "Avoid picking at scabs"
+          ]
+        });
+
+        // Save to history
+        await aiService.saveAnalysis({
+          type: "wound",
+          input: woundDescription || "Wound image analysis",
+          result: response.data,
+          imageUrl: imagePreview
+        });
+        fetchHistory();
+      } else {
+        setError(response.message || "Wound analysis failed");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to analyze wound image");
+    } finally {
+      setLoading(false);
+    }
+  };
+ 
+  // Handle image upload
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setWoundImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  // Handle view history details
-  const handleViewHistory = (entry) => {
-    setSelectedHistory(entry);
-    setShowHistoryModal(true);
-  };
-
-  // Handle clear all history
-  const handleClearAllHistory = () => {
-    if (window.confirm('Are you sure you want to delete all history?')) {
-      setHistory([]);
+  const removeImage = () => {
+    setWoundImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
-  // Handle chip click
-  const handleChipClick = (chipLabel) => {
-    setSymptoms(prev => prev ? `${prev}, ${chipLabel}` : chipLabel);
-    textareaRef.current?.focus();
-  };
-
-  // Get severity color
-  const getSeverityColor = (severity) => {
-    switch (severity.toLowerCase()) {
-      case 'low': return 'text-green-600 bg-green-100 dark:bg-green-900/30';
-      case 'medium': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30';
-      case 'high': return 'text-red-600 bg-red-100 dark:bg-red-900/30';
-      default: return 'text-gray-600 bg-gray-100 dark:bg-gray-700';
+  const handleSaveAnalysis = async () => {
+    if (analysis) {
+      try {
+        await aiService.saveAnalysis({
+          type: activeMode,
+          input: activeMode === "symptom" ? symptoms : woundDescription,
+          result: analysis,
+          imageUrl: imagePreview
+        });
+        setFeedback({ type: "success", message: "Analysis saved to history!" });
+        setTimeout(() => setFeedback(null), 3000);
+        fetchHistory();
+      } catch (err) {
+        setFeedback({ type: "error", message: "Failed to save analysis" });
+        setTimeout(() => setFeedback(null), 3000);
+      }
     }
   };
 
-  // Get severity icon
-  const getSeverityIcon = (severity) => {
-    switch (severity.toLowerCase()) {
-      case 'low': return <CheckCircle className="w-4 h-4" />;
-      case 'medium': return <AlertCircle className="w-4 h-4" />;
-      case 'high': return <AlertTriangle className="w-4 h-4" />;
-      default: return <Activity className="w-4 h-4" />;
+  const handleCopyResults = () => {
+    if (analysis) {
+      const textToCopy = `
+${activeMode === "symptom" ? "Symptom Analysis Results" : "Wound Analysis Results"}
+Date: ${new Date().toLocaleString()}
+${activeMode === "symptom" ? `Symptoms: ${symptoms}` : `Wound Description: ${woundDescription || "Image analysis"}`}
+
+${analysis.analysis || JSON.stringify(analysis, null, 2)}
+
+Urgency Level: ${analysis.urgency?.level?.toUpperCase() || "Unknown"}
+
+Recommended Actions:
+${analysis.recommendedActions?.map(a => `- ${a}`).join('\n')}
+
+Disclaimer: This is AI-generated analysis for informational purposes only. Not a medical diagnosis.
+      `;
+      navigator.clipboard.writeText(textToCopy);
+      setFeedback({ type: "success", message: "Results copied to clipboard!" });
+      setTimeout(() => setFeedback(null), 3000);
     }
+  };
+
+  const loadHistoryAnalysis = (item) => {
+    setAnalysis(item.result);
+    if (item.type === "symptom") {
+      setSymptoms(item.input);
+      setActiveMode("symptom");
+    } else {
+      setWoundDescription(item.input);
+      if (item.imageUrl) setImagePreview(item.imageUrl);
+      setActiveMode("wound");
+    }
+    setShowHistory(false);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+  const deleteHistoryItem = async (id) => {
+    try {
+      await aiService.deleteAnalysis(id);
+      fetchHistory();
+      setFeedback({ type: "success", message: "Analysis deleted from history" });
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (err) {
+      setFeedback({ type: "error", message: "Failed to delete analysis" });
+      setTimeout(() => setFeedback(null), 3000);
+    }
+  };
+
+  const clearForm = () => {
+    setSymptoms("");
+    setWoundImage(null);
+    setWoundDescription("");
+    setImagePreview(null);
+    setAnalysis(null);
+    setStreamingText("");
+    setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-900">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-green-200 dark:bg-green-900/20 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-200 dark:bg-blue-900/20 rounded-full blur-3xl opacity-30 animate-pulse delay-1000"></div>
+      </div>
 
+      <div className="relative h-screen flex flex-col">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-2 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
-            <Brain className="w-8 h-8 text-green-600 dark:text-green-400" />
+        <div className="flex-shrink-0 text-center py-6 px-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-full mb-4">
+            <Sparkles className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm font-medium text-green-700 dark:text-green-300">AI-Powered Medical Assistant</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            AI Symptom Checker
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-green-800 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent">
+            Symptom & Wound Analysis
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Describe your symptoms and get AI-powered insights about possible conditions and recommended specialists
+          <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mt-2">
+            Describe your symptoms or upload a wound image for AI-powered analysis
           </p>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Mode Toggle */}
+        <div className="flex-shrink-0 flex justify-center gap-2 mb-4 px-4">
+          <button
+            onClick={() => setActiveMode("symptom")}
+            className={`px-6 py-2 rounded-lg font-medium transition-all ${activeMode === "symptom"
+              ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
+              : "bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
+              }`}
+          >
+            <Brain className="w-4 h-4 inline mr-2" />
+            Symptom Analysis
+          </button>
+          <button
+            onClick={() => setActiveMode("wound")}
+            className={`px-6 py-2 rounded-lg font-medium transition-all ${activeMode === "wound"
+              ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
+              : "bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
+              }`}
+          >
+            <Camera className="w-4 h-4 inline mr-2" />
+            Wound Analysis
+          </button>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="px-6 py-2 rounded-lg font-medium bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 transition-all"
+          >
+            <History className="w-4 h-4 inline mr-2" />
+            History
+          </button>
+        </div>
 
-          {/* Left Column - Input Section */}
-          <div className="lg:col-span-2 space-y-6">
-
+        {/* Main Content - Two Column Scrollable Layout */}
+        <div className="flex-1 flex overflow-hidden px-4 pb-4 gap-6">
+          {/* Left Column - Input Area (Scrollable) */}
+          <div className="w-1/2 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
             {/* Input Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-              <div className="p-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Describe Your Symptoms
-                </label>
-                <textarea
-                  ref={textareaRef}
-                  value={symptoms}
-                  onChange={(e) => setSymptoms(e.target.value)}
-                  placeholder="Example: I've had a persistent headache for 3 days, accompanied by nausea and sensitivity to light..."
-                  rows="5"
-                  className="w-full px-4 py-3 text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                />
-
-                {/* Symptom Chips */}
-                <div className="mt-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Common symptoms:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {symptomChips.map((chip, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleChipClick(chip.label)}
-                        className="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                      >
-                        <chip.icon className="w-3 h-3 mr-1" />
-                        {chip.label}
-                      </button>
-                    ))}
+            <div className="bg-white dark:bg-neutral-800/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+                    {activeMode === "symptom" ? (
+                      <Stethoscope className="w-5 h-5 text-white" />
+                    ) : (
+                      <Camera className="w-5 h-5 text-white" />
+                    )}
                   </div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {activeMode === "symptom" ? "Describe Your Symptoms" : "Upload Wound Image"}
+                  </h2>
                 </div>
-
-                {/* Analyze Button */}
                 <button
-                  onClick={handleAnalyze}
-                  disabled={!symptoms.trim() || loading}
-                  className="mt-6 w-full inline-flex items-center justify-center px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  onClick={clearForm}
+                  className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                  title="Clear"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Analyzing Symptoms...
-                    </>
-                  ) : (
-                    <>
-                      <Activity className="w-5 h-5 mr-2" />
-                      Analyze Symptoms
-                    </>
-                  )}
+                  <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
-            </div>
 
-            {/* Results Section */}
-            {analysis && (
-              <div ref={resultRef} className="space-y-6">
+              {activeMode === "symptom" ? (
+                <>
+                  <textarea
+                    value={symptoms}
+                    onChange={(e) => setSymptoms(e.target.value)}
+                    placeholder="Example: I have been experiencing fever up to 101°F for the past 2 days, along with cough, sore throat, and body aches..."
+                    rows={6}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-neutral-700/50 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none text-gray-900 dark:text-white"
+                  />
 
-                {/* Possible Conditions */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center">
-                      <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400 mr-2" />
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Possible Conditions</h2>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Based on your symptoms, these are possible causes</p>
-                  </div>
-
-                  <div className="p-6 space-y-4">
-                    {analysis.conditions.map((condition, index) => (
-                      <div key={index} className="border-l-4 border-purple-500 pl-4 py-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-gray-900 dark:text-white">{condition.name}</h3>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(condition.severity)}`}>
-                            {getSeverityIcon(condition.severity)}
-                            <span className="ml-1">{condition.severity} Severity</span>
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{condition.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Recommended Doctor */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center">
-                      <Stethoscope className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recommended Specialist</h2>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <img
-                        src={analysis.recommendedDoctor.image}
-                        alt={analysis.recommendedDoctor.name}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{analysis.recommendedDoctor.name}</h3>
-                        <p className="text-sm text-green-600 dark:text-green-400">{analysis.recommendedSpecialty}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{analysis.recommendedDoctor.experience} experience</p>
-                      </div>
-                    </div>
+                  <div className="flex gap-3 mt-4">
                     <button
-                      onClick={() => window.location.href = '/doctors'}
-                      className="w-full inline-flex items-center justify-center px-4 py-2 border border-green-600 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                      onClick={handleAnalyze}
+                      disabled={loading || streaming}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:opacity-90 disabled:opacity-50 font-medium"
                     >
-                      Book Appointment with {analysis.recommendedSpecialty}
-                      <ChevronRight className="w-4 h-4 ml-2" />
+                      {loading ? <Loader className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
+                      Analyze
+                    </button>
+                    <button
+                      onClick={handleStreamAnalyze}
+                      disabled={loading || streaming}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-neutral-700 border-2 border-gray-200 dark:border-neutral-600 rounded-xl hover:bg-gray-50 disabled:opacity-50 font-medium"
+                    >
+                      {streaming ? <Loader className="w-5 h-5 animate-spin" /> : <Brain className="w-5 h-5" />}
+                      Real-time
                     </button>
                   </div>
-                </div>
-
-                {/* Recommendations */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center">
-                      <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mr-2" />
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recommendations</h2>
-                    </div>
+                </>
+              ) : (
+                <>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-gray-300 dark:border-neutral-600 rounded-xl p-8 text-center cursor-pointer hover:border-green-500 transition"
+                  >
+                    {imagePreview ? (
+                      <div className="relative">
+                        <img src={imagePreview} alt="Preview" className="max-h-48 mx-auto rounded-lg" />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-600 dark:text-gray-400">Click or drag to upload wound image</p>
+                        <p className="text-xs text-gray-500 mt-1">JPG, PNG, GIF up to 10MB</p>
+                      </>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
                   </div>
 
-                  <div className="p-6">
-                    <ul className="space-y-2">
-                      {analysis.recommendations.map((rec, index) => (
-                        <li key={index} className="flex items-start text-sm text-gray-700 dark:text-gray-300">
-                          <span className="inline-block w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 mr-2"></span>
-                          {rec}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Warning & Action Buttons */}
-                <div className="space-y-4">
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <Shield className="w-5 h-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-red-700 dark:text-red-300">
-                        <strong>Disclaimer:</strong> This is not a medical diagnosis. The information provided is for educational purposes only.
-                        Please consult a qualified healthcare professional for proper diagnosis and treatment.
-                      </p>
-                    </div>
-                  </div>
+                  <textarea
+                    value={woundDescription}
+                    onChange={(e) => setWoundDescription(e.target.value)}
+                    placeholder="Optional: Describe the wound (how it happened, when, any symptoms like pain, swelling, discharge...)"
+                    rows={3}
+                    className="w-full mt-4 px-4 py-3 rounded-xl bg-gray-50 dark:bg-neutral-700/50 border border-gray-200 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none text-gray-900 dark:text-white"
+                  />
 
                   <button
-                    onClick={handleSaveToHistory}
-                    className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md"
+                    onClick={handleWoundAnalysis}
+                    disabled={loading || !woundImage}
+                    className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:opacity-90 disabled:opacity-50 font-medium"
                   >
-                    <Save className="w-5 h-5 mr-2" />
-                    Save to History
+                    {loading ? <Loader className="w-5 h-5 animate-spin" /> : <Microscope className="w-5 h-5" />}
+                    Analyze Wound
+                  </button>
+                </>
+              )}
+
+              {error && (
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-xl flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                </div>
+              )}
+            </div>
+
+            {/* History Panel (when shown) */}
+            {showHistory && (
+              <div className="bg-white dark:bg-neutral-800/90 rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <History className="w-5 h-5 text-green-600" />
+                    Analysis History
+                  </h3>
+                  <button onClick={() => setShowHistory(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* Right Column - History Section */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 sticky top-20">
-              <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <History className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Check History</h2>
-                  </div>
-                  {history.length > 0 && (
-                    <button
-                      onClick={handleClearAllHistory}
-                      className="text-xs text-red-600 dark:text-red-400 hover:text-red-700"
-                    >
-                      Clear All
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-6">
-                {history.length === 0 ? (
-                  <div className="text-center py-8">
-                    <History className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">No saved history yet</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Your symptom checks will appear here</p>
-                  </div>
+                {loadingHistory ? (
+                  <div className="flex justify-center py-8"><Loader className="w-6 h-6 animate-spin text-green-600" /></div>
+                ) : history.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No analysis history yet</div>
                 ) : (
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                    {history.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="border border-gray-100 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition-shadow"
-                      >
-                        <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
-                          {entry.symptoms}
-                        </p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <div>
-                            <p className="text-xs text-green-600 dark:text-green-400">
-                              {entry.topCondition}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              {new Date(entry.date).toLocaleDateString()}
-                            </p>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {history.map((item) => (
+                      <div key={item._id} className="p-3 bg-gray-50 dark:bg-neutral-700/50 rounded-xl hover:bg-gray-100 transition cursor-pointer group">
+                        <div onClick={() => loadHistoryAnalysis(item)} className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              {item.type === "symptom" ? <Brain className="w-4 h-4 text-green-600" /> : <Camera className="w-4 h-4 text-blue-600" />}
+                              <span className="text-xs font-medium text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{item.input}</p>
                           </div>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleViewHistory(entry)}
-                              className="p-1 text-blue-600 hover:text-blue-700 transition-colors"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteHistory(entry.id)}
-                              className="p-1 text-red-600 hover:text-red-700 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteHistoryItem(item._id); }}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded-lg transition"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* History Detail Modal */}
-      {showHistoryModal && selectedHistory && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Symptom Check Details</h3>
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Symptoms</label>
-                <p className="text-gray-900 dark:text-white mt-1">{selectedHistory.symptoms}</p>
+                {historyTotal > 10 && (
+                  <div className="flex justify-center gap-2 mt-4">
+                    <button
+                      onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                      disabled={historyPage === 1}
+                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm">Page {historyPage}</span>
+                    <button
+                      onClick={() => setHistoryPage(p => p + 1)}
+                      disabled={historyPage * 10 >= historyTotal}
+                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="mb-4">
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Date</label>
-                <p className="text-gray-900 dark:text-white mt-1">
-                  {new Date(selectedHistory.date).toLocaleString()}
+            )}
+          </div>
+
+          {/* Right Column - Results Area (Scrollable) */}
+          <div ref={resultsRef} className="w-1/2 overflow-y-auto pl-2 custom-scrollbar">
+            {(analysis || streamingText || loading) && (
+              <div className="space-y-4">
+                {/* Loading State */}
+                {loading && !analysis && (
+                  <div className="bg-white dark:bg-neutral-800/90 rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-12 text-center">
+                    <Loader className="w-12 h-12 text-green-600 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-400">Analyzing your {activeMode}...</p>
+                    <p className="text-xs text-gray-500 mt-2">This may take a few seconds</p>
+                  </div>
+                )}
+
+                {/* Severity Badge */}
+                {analysis?.urgency && (
+                  <div className={`p-4 rounded-2xl border-2 ${severityColors[analysis.urgency.level]?.bg || severityColors.low.bg} ${severityColors[analysis.urgency.level]?.border || severityColors.low.border}`}>
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-3">
+                        {analysis.urgency.level === "low" && <ShieldCheck className="w-8 h-8 text-green-600" />}
+                        {analysis.urgency.level === "moderate" && <AlertTriangle className="w-8 h-8 text-yellow-600" />}
+                        {analysis.urgency.level === "high" && <Ambulance className="w-8 h-8 text-orange-600" />}
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Urgency Level</p>
+                          <p className={`text-xl font-bold ${severityColors[analysis.urgency.level]?.text || severityColors.low.text}`}>
+                            {analysis.urgency.level?.toUpperCase() || "UNKNOWN"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{analysis.urgency.timeframe || "Varies"}</span>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-gray-700 dark:text-gray-300">{analysis.urgency.message}</p>
+                  </div>
+                )}
+
+                {/* Wound Analysis Results */}
+                {analysis?.woundResult && (
+                  <div className="bg-white dark:bg-neutral-800/90 rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-6">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Wound Analysis Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-gray-50 dark:bg-neutral-700/50 rounded-xl">
+                        <p className="text-xs text-gray-500">Severity</p>
+                        <p className="text-lg font-bold capitalize">{analysis.woundResult.severity}</p>
+                      </div>
+                      <div className="p-3 bg-gray-50 dark:bg-neutral-700/50 rounded-xl">
+                        <p className="text-xs text-gray-500">Wound Area</p>
+                        <p className="text-lg font-bold">{Math.round(analysis.woundResult.wound_area)} px</p>
+                      </div>
+                      <div className="p-3 bg-gray-50 dark:bg-neutral-700/50 rounded-xl">
+                        <p className="text-xs text-gray-500">Red Percentage</p>
+                        <p className="text-lg font-bold">{analysis.woundResult.red_pct}%</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Analysis Results Card */}
+                {(analysis?.analysis || streamingText) && (
+                  <div className="bg-white dark:bg-neutral-800/90 rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 overflow-hidden">
+                    <div className="border-b border-gray-200 dark:border-neutral-700 p-6">
+                      <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-5 h-5 text-green-600" />
+                          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Analysis Results</h2>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={handleCopyResults} className="p-2 rounded-lg hover:bg-gray-100 transition" title="Copy">
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button onClick={handleSaveAnalysis} className="p-2 rounded-lg hover:bg-gray-100 transition" title="Save">
+                            <Save className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      {analysis?.analysis ? (
+                        <div className="space-y-6">
+                          {/* Tabs */}
+                          <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-neutral-700">
+                            {[
+                              { id: "analysis", label: "Analysis", icon: Brain },
+                              { id: "actions", label: "Actions", icon: Target },
+                              { id: "remedies", label: "Remedies", icon: HandHeart }
+                            ].map(tab => (
+                              <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition ${activeTab === tab.id
+                                  ? "text-green-600 border-b-2 border-green-600"
+                                  : "text-gray-500 hover:text-gray-700"
+                                  }`}
+                              >
+                                <tab.icon className="w-4 h-4" />
+                                {tab.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          {activeTab === "analysis" && (
+                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                              <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {analysis.analysis}
+                              </div>
+                            </div>
+                          )}
+
+                          {activeTab === "actions" && analysis.recommendedActions && (
+                            <div className="space-y-3">
+                              {analysis.recommendedActions.map((action, idx) => (
+                                <div key={idx} className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                                  <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                  <p className="text-sm text-gray-700 dark:text-gray-300">{action}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {activeTab === "remedies" && analysis.homeRemedies && (
+                            <div className="grid sm:grid-cols-2 gap-3">
+                              {analysis.homeRemedies.map((remedy, idx) => (
+                                <div key={idx} className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                                  <Flower2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                  <p className="text-sm text-gray-700 dark:text-gray-300">{remedy}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : streamingText && (
+                        <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {streamingText}
+                          <span className="inline-block w-2 h-4 bg-green-600 animate-pulse ml-1"></span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Feedback Section */}
+                {analysis && (
+                  <div className="bg-white dark:bg-neutral-800/90 rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                      <ThumbsUp className="w-5 h-5 text-green-600" />
+                      Was this analysis helpful?
+                    </h3>
+                    <div className="flex gap-3">
+                      <button onClick={() => setFeedback({ type: "positive", message: "Thanks for your feedback!" })} className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg hover:bg-green-100 transition">
+                        <ThumbsUp className="w-4 h-4 text-green-600" /> Helpful
+                      </button>
+                      <button onClick={() => setFeedback({ type: "negative", message: "Sorry it wasn't helpful. We'll improve!" })} className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-lg hover:bg-red-100 transition">
+                        <ThumbsDown className="w-4 h-4 text-red-600" /> Not Helpful
+                      </button>
+                      <button onClick={() => setFeedback({ type: "report", message: "Issue reported. Thank you!" })} className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <Flag className="w-4 h-4" /> Report Issue
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!analysis && !streamingText && !loading && (
+              <div className="bg-white dark:bg-neutral-800/90 rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-12 text-center">
+                <Brain className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Ready to Analyze</h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Enter your symptoms or upload a wound image to see AI-powered analysis here
                 </p>
               </div>
-              <div className="mb-4">
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Recommended Doctor</label>
-                <p className="text-green-600 dark:text-green-400 mt-1">{selectedHistory.recommendedSpecialty}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Possible Conditions</label>
-                <div className="mt-2 space-y-2">
-                  {selectedHistory.conditions.map((condition, idx) => (
-                    <div key={idx} className="border-l-4 border-purple-500 pl-3">
-                      <p className="font-medium text-gray-900 dark:text-white">{condition.name}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{condition.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Feedback Toast */}
+        {feedback && (
+          <div className={`fixed bottom-4 right-4 z-50 p-4 rounded-xl shadow-lg animate-slide-up ${feedback.type === "success" || feedback.type === "positive"
+            ? "bg-green-100 dark:bg-green-900/80 text-green-800"
+            : feedback.type === "error" || feedback.type === "negative"
+              ? "bg-red-100 dark:bg-red-900/80 text-red-800"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-800"
+            }`}>
+            <div className="flex items-center gap-2">
+              {feedback.type === "success" && <CheckCircle className="w-5 h-5" />}
+              {feedback.type === "positive" && <ThumbsUp className="w-5 h-5" />}
+              {feedback.type === "negative" && <ThumbsDown className="w-5 h-5" />}
+              {feedback.type === "report" && <Flag className="w-5 h-5" />}
+              {feedback.type === "error" && <AlertTriangle className="w-5 h-5" />}
+              <span>{feedback.message}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style jsx>{`
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: #2d2d2d; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a4a4a; }
+      `}</style>
     </div>
   );
-}
+};
+
+export default SymptomAnalysis;
