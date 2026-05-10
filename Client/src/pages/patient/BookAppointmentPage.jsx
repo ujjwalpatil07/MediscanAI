@@ -7,6 +7,7 @@ import Loader from "../../components/common/Loader";
 import AuthContext from '../../context/AuthContext';
 import { fetchAvailableSlots, bookAppointmentService } from '../../services/appointment.service';
 import { getDoctorById } from "../../services/doctor.service";
+import MedicalBackground from '../../components/common/MedicalBackground';
 
 export default function BookAppointmentPage() {
     const { doctor_id } = useParams();
@@ -25,7 +26,7 @@ export default function BookAppointmentPage() {
         patientName: '',
         patientAge: '',
         patientGender: '',
-        patientPhone: '', // Added phone for family booking
+        patientPhone: '',
         relation: 'self',
         symptoms: ''
     });
@@ -124,8 +125,6 @@ export default function BookAppointmentPage() {
                 const response = await fetchAvailableSlots(doctor._id, selectedDate);
 
                 if (isMounted && response.data.success) {
-                    // Update to handle both available and booked slots
-                    // Update the slot mapping in loadTimeSlots
                     const slots = response.data.slots.map(slot => ({
                         startTime: slot.startTime,
                         endTime: slot.endTime,
@@ -246,7 +245,6 @@ export default function BookAppointmentPage() {
         setError('');
 
         try {
-            // Prepare patient details based on booking type
             let patientDetailsObj;
 
             if (formData.bookingFor === 'self') {
@@ -262,11 +260,10 @@ export default function BookAppointmentPage() {
                     age: parseInt(formData.patientAge),
                     gender: formData.patientGender,
                     relation: formData.relation,
-                    phone: formData.patientPhone // Add phone for family member
+                    phone: formData.patientPhone
                 };
             }
 
-            // Prepare location data
             const locationData = {
                 city: doctor?.clinicCity || '',
                 state: doctor?.clinicState || '',
@@ -284,24 +281,18 @@ export default function BookAppointmentPage() {
                 location: locationData,
                 ...(appointmentType === 'video' && { meetingLink: generateMeetingLink() })
             };
-
-            
-
-            console.log('Booking data being sent:', appointmentData); // For debugging
-
+          
             const response = await bookAppointmentService(appointmentData);
 
             if (response.data.success) {
                 toast.success('Appointment booked successfully!');
 
-                // Show meeting link for video consultation
                 if (appointmentType === 'video' && response.data.data?.meetingLink) {
                     toast.success(`Meeting link: ${response.data.data.meetingLink}`, {
                         duration: 10000,
                     });
                 }
 
-                // Reset form
                 setSelectedSlot(null);
                 setFormData({
                     bookingFor: 'self',
@@ -314,7 +305,6 @@ export default function BookAppointmentPage() {
                 });
                 setShowModal(false);
 
-                // Navigate to my appointments
                 navigate('/p/my-appointments');
             } else {
                 throw new Error(response.data.message || 'Booking failed');
@@ -347,10 +337,10 @@ export default function BookAppointmentPage() {
     // Doctor not found
     if (error === 'Doctor not found' || !doctor) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Doctor Not Found</h2>
-                    <p className="text-gray-600 mb-4">The doctor you're looking for doesn't exist.</p>
+                    <h2 className="text-2xl font-bold text-neutral-800 dark:text-white mb-2">Doctor Not Found</h2>
+                    <p className="text-neutral-600 dark:text-neutral-400 mb-4">The doctor you're looking for doesn't exist.</p>
                     <button
                         onClick={() => navigate('/doctors')}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
@@ -365,10 +355,10 @@ export default function BookAppointmentPage() {
     // No available dates
     if (availableDates.length === 0 && !isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">No Availability</h2>
-                    <p className="text-gray-600 mb-4">This doctor has no available appointments in the next 30 days.</p>
+                    <h2 className="text-2xl font-bold text-neutral-800 dark:text-white mb-2">No Availability</h2>
+                    <p className="text-neutral-600 dark:text-neutral-400 mb-4">This doctor has no available appointments in the next 30 days.</p>
                     <button
                         onClick={() => navigate('/doctors')}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
@@ -382,7 +372,10 @@ export default function BookAppointmentPage() {
 
     return (
         <>
-            <div className="min-h-screen bg-gray-50 pb-8">
+            <div className="relative min-h-screen bg-neutral-50 dark:bg-neutral-900 pb-8">
+
+                <MedicalBackground />
+
                 <div className="bg-gradient-to-r from-green-600 to-teal-700 dark:from-[#0a2a2a] dark:to-[#063333] py-12 mb-5">
                     <div className="text-center px-4 sm:px-6 lg:px-8">
                         <h1 className="text-3xl font-bold text-white">Book Appointment</h1>
@@ -395,7 +388,7 @@ export default function BookAppointmentPage() {
                         {/* Main Form Section */}
                         <div className="lg:col-span-2 space-y-6">
                             {/* Doctor Summary Card */}
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-700 p-6">
                                 <div className="flex items-center space-x-4">
                                     <img
                                         src={doctor?.profilePhoto || `https://ui-avatars.com/api/?name=${doctor?.firstName}+${doctor?.lastName}&background=10b981&color=fff`}
@@ -406,53 +399,53 @@ export default function BookAppointmentPage() {
                                         }}
                                     />
                                     <div>
-                                        <h2 className="text-xl font-semibold text-gray-900">
+                                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
                                             Dr. {doctor?.firstName} {doctor?.lastName}
                                         </h2>
-                                        <p className="text-gray-600">{doctor?.specialty}</p>
+                                        <p className="text-neutral-600 dark:text-neutral-400">{doctor?.specialty}</p>
                                         <div className="flex items-center mt-1">
                                             <span className="text-yellow-400">★</span>
-                                            <span className="text-sm text-gray-600 ml-1">{doctor?.rating || 0}</span>
-                                            <span className="mx-2">•</span>
-                                            <span className="text-sm text-gray-600">{doctor?.yearsOfExperience} years exp</span>
-                                            <span className="mx-2">•</span>
-                                            <span className="text-sm font-semibold text-green-600">₹{doctor?.consultationFee}</span>
+                                            <span className="text-sm text-neutral-600 dark:text-neutral-400 ml-1">{doctor?.rating || 0}</span>
+                                            <span className="mx-2 text-neutral-400 dark:text-neutral-600">•</span>
+                                            <span className="text-sm text-neutral-600 dark:text-neutral-400">{doctor?.yearsOfExperience} years exp</span>
+                                            <span className="mx-2 text-neutral-400 dark:text-neutral-600">•</span>
+                                            <span className="text-sm font-semibold text-green-600 dark:text-green-500">₹{doctor?.consultationFee}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="mt-4 text-gray-600 text-sm">{doctor?.bio}</p>
+                                <p className="mt-4 text-neutral-600 dark:text-neutral-400 text-sm">{doctor?.bio}</p>
                             </div>
 
                             {/* Appointment Type */}
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Appointment Type</h3>
+                            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-700 p-6">
+                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Appointment Type</h3>
                                 <div className="flex space-x-4">
                                     <button
                                         onClick={() => setAppointmentType('clinic')}
                                         className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${appointmentType === 'clinic'
-                                            ? 'border-green-600 bg-green-50 text-green-700'
-                                            : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-green-600 dark:border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                                            : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 text-neutral-700 dark:text-neutral-300'
                                             }`}
                                     >
                                         <div className="font-semibold">Clinic Visit</div>
-                                        <div className="text-sm text-gray-500">In-person consultation</div>
+                                        <div className="text-sm text-neutral-500 dark:text-neutral-500">In-person consultation</div>
                                     </button>
                                     <button
                                         onClick={() => setAppointmentType('video')}
                                         className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${appointmentType === 'video'
-                                            ? 'border-green-600 bg-green-50 text-green-700'
-                                            : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-green-600 dark:border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                                            : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 text-neutral-700 dark:text-neutral-300'
                                             }`}
                                     >
                                         <div className="font-semibold">Video Consult</div>
-                                        <div className="text-sm text-gray-500">Online consultation</div>
+                                        <div className="text-sm text-neutral-500 dark:text-neutral-500">Online consultation</div>
                                     </button>
                                 </div>
                             </div>
 
                             {/* Date Selection */}
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Date</h3>
+                            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-700 p-6">
+                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Select Date</h3>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
                                     {availableDates.map((date) => {
                                         const isPast = isDatePast(date);
@@ -462,10 +455,10 @@ export default function BookAppointmentPage() {
                                                 onClick={() => !isPast && handleDateChange(date)}
                                                 disabled={isPast}
                                                 className={`py-3 px-2 rounded-lg text-center transition-all ${selectedDate === date
-                                                    ? 'bg-green-600 text-white shadow-md'
+                                                    ? 'bg-green-600 dark:bg-green-600 text-white shadow-md'
                                                     : isPast
-                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                                                        ? 'bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                                                        : 'bg-neutral-50 dark:bg-neutral-700/50 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
                                                     }`}
                                             >
                                                 <div className="text-xs font-medium">
@@ -484,15 +477,15 @@ export default function BookAppointmentPage() {
                             </div>
 
                             {/* Time Slot Selection */}
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-700 p-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-900">Select Time Slot</h3>
-                                    {loadingSlots && <span className="text-sm text-gray-500">Loading slots...</span>}
+                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Select Time Slot</h3>
+                                    {loadingSlots && <span className="text-sm text-neutral-500 dark:text-neutral-400">Loading slots...</span>}
                                 </div>
 
                                 {!selectedDate ? (
                                     <div className="text-center py-8">
-                                        <div className="text-gray-500 mb-2">Please select a date first</div>
+                                        <div className="text-neutral-500 dark:text-neutral-400 mb-2">Please select a date first</div>
                                     </div>
                                 ) : loadingSlots ? (
                                     <div className="flex justify-center py-8">
@@ -500,18 +493,17 @@ export default function BookAppointmentPage() {
                                     </div>
                                 ) : timeSlots.length === 0 ? (
                                     <div className="text-center py-8">
-                                        <div className="text-gray-500 mb-2">No slots available for this date</div>
-                                        <p className="text-sm text-gray-400">Please select another date.</p>
+                                        <div className="text-neutral-500 dark:text-neutral-400 mb-2">No slots available for this date</div>
+                                        <p className="text-sm text-neutral-400 dark:text-neutral-500">Please select another date.</p>
                                     </div>
                                 ) : (
                                     <>
-                                        {/* Show statistics */}
                                         <div className="mb-3 flex justify-between items-center text-sm">
-                                            <span className="text-green-600">
+                                            <span className="text-green-600 dark:text-green-500">
                                                 {timeSlots.filter(slot => !slot.isBooked).length} slot{timeSlots.filter(slot => !slot.isBooked).length !== 1 ? 's' : ''} available
                                             </span>
                                             {timeSlots.filter(slot => slot.isBooked).length > 0 && (
-                                                <span className="text-red-500">
+                                                <span className="text-red-600 dark:text-red-500">
                                                     {timeSlots.filter(slot => slot.isBooked).length} slot{timeSlots.filter(slot => slot.isBooked).length !== 1 ? 's' : ''} booked
                                                 </span>
                                             )}
@@ -530,10 +522,10 @@ export default function BookAppointmentPage() {
                                                         className={`
                                 py-2 px-3 rounded-lg border transition-all relative
                                 ${isSelected && !isBooked
-                                                                ? 'border-green-600 bg-green-50 text-green-700 font-semibold ring-2 ring-green-200'
+                                                                ? 'border-green-600 dark:border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-semibold ring-2 ring-green-200 dark:ring-green-900'
                                                                 : isBooked
-                                                                    ? 'border-red-200 bg-red-50 text-gray-400 cursor-not-allowed line-through'
-                                                                    : 'border-gray-200 hover:border-green-400 hover:bg-green-50 hover:text-green-700'
+                                                                    ? 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 text-neutral-400 dark:text-neutral-500 cursor-not-allowed line-through'
+                                                                    : 'border-neutral-200 dark:border-neutral-700 hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 text-neutral-700 dark:text-neutral-300'
                                                             }
                             `}
                                                     >
@@ -551,19 +543,18 @@ export default function BookAppointmentPage() {
                                             })}
                                         </div>
 
-                                        {/* Legend */}
-                                        <div className="mt-4 pt-3 border-t border-gray-100 flex gap-4 text-xs">
+                                        <div className="mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-700 flex gap-4 text-xs">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
-                                                <span className="text-gray-600">Available</span>
+                                                <div className="w-4 h-4 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded"></div>
+                                                <span className="text-neutral-600 dark:text-neutral-400">Available</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <div className="w-4 h-4 bg-red-50 border border-red-200 rounded line-through"></div>
-                                                <span className="text-gray-600">Booked</span>
+                                                <div className="w-4 h-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded line-through"></div>
+                                                <span className="text-neutral-600 dark:text-neutral-400">Booked</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <div className="w-4 h-4 bg-green-600 rounded"></div>
-                                                <span className="text-gray-600">Selected</span>
+                                                <span className="text-neutral-600 dark:text-neutral-400">Selected</span>
                                             </div>
                                         </div>
                                     </>
@@ -571,11 +562,11 @@ export default function BookAppointmentPage() {
                             </div>
 
                             {/* Patient Form */}
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient Details</h3>
+                            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-700 p-6">
+                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Patient Details</h3>
 
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                                         Booking for
                                     </label>
                                     <div className="flex space-x-4">
@@ -585,9 +576,9 @@ export default function BookAppointmentPage() {
                                                 value="self"
                                                 checked={formData.bookingFor === 'self'}
                                                 onChange={() => handleBookingForChange('self')}
-                                                className="mr-2 text-green-600 focus:ring-green-500"
+                                                className="mr-2 text-green-600 focus:ring-green-500 dark:bg-neutral-700 dark:border-neutral-600"
                                             />
-                                            <span>Self</span>
+                                            <span className="text-neutral-700 dark:text-neutral-300">Self</span>
                                         </label>
                                         <label className="flex items-center cursor-pointer">
                                             <input
@@ -595,9 +586,9 @@ export default function BookAppointmentPage() {
                                                 value="family"
                                                 checked={formData.bookingFor === 'family'}
                                                 onChange={() => handleBookingForChange('family')}
-                                                className="mr-2 text-green-600 focus:ring-green-500"
+                                                className="mr-2 text-green-600 focus:ring-green-500 dark:bg-neutral-700 dark:border-neutral-600"
                                             />
-                                            <span>Family Member</span>
+                                            <span className="text-neutral-700 dark:text-neutral-300">Family Member</span>
                                         </label>
                                     </div>
                                 </div>
@@ -606,43 +597,43 @@ export default function BookAppointmentPage() {
                                     {formData.bookingFor === 'self' ? (
                                         <>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                                     Name
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={`${loginUser?.firstName || ''} ${loginUser?.lastName || ''}`}
                                                     disabled
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-neutral-50 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                                     Age
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={getPatientAge() || 'Not specified'}
                                                     disabled
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-neutral-50 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                                     Gender
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={loginUser?.gender || 'Not specified'}
                                                     disabled
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-neutral-50 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400"
                                                 />
                                             </div>
                                         </>
                                     ) : (
                                         <>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                                     Patient Name *
                                                 </label>
                                                 <input
@@ -650,13 +641,13 @@ export default function BookAppointmentPage() {
                                                     name="patientName"
                                                     value={formData.patientName}
                                                     onChange={handleInputChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-neutral-700 dark:text-white"
                                                     placeholder="Enter patient name"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                                     Age *
                                                 </label>
                                                 <input
@@ -664,7 +655,7 @@ export default function BookAppointmentPage() {
                                                     name="patientAge"
                                                     value={formData.patientAge}
                                                     onChange={handleInputChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-neutral-700 dark:text-white"
                                                     placeholder="0-150"
                                                     min="0"
                                                     max="150"
@@ -672,14 +663,14 @@ export default function BookAppointmentPage() {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                                     Gender *
                                                 </label>
                                                 <select
                                                     name="patientGender"
                                                     value={formData.patientGender}
                                                     onChange={handleInputChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-neutral-700 dark:text-white"
                                                 >
                                                     <option value="">Select Gender</option>
                                                     <option value="male">Male</option>
@@ -689,7 +680,7 @@ export default function BookAppointmentPage() {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                                     Phone Number *
                                                 </label>
                                                 <input
@@ -697,21 +688,21 @@ export default function BookAppointmentPage() {
                                                     name="patientPhone"
                                                     value={formData.patientPhone}
                                                     onChange={handleInputChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-neutral-700 dark:text-white"
                                                     placeholder="10-digit mobile number"
                                                     maxLength="10"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                                     Relation *
                                                 </label>
                                                 <select
                                                     name="relation"
                                                     value={formData.relation}
                                                     onChange={handleInputChange}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-neutral-700 dark:text-white"
                                                 >
                                                     <option value="self">Self</option>
                                                     <option value="father">Father</option>
@@ -725,7 +716,7 @@ export default function BookAppointmentPage() {
                                     )}
 
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                                             Symptoms / Reason for visit *
                                         </label>
                                         <textarea
@@ -733,7 +724,7 @@ export default function BookAppointmentPage() {
                                             value={formData.symptoms}
                                             onChange={handleInputChange}
                                             rows="3"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                                            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-neutral-700 dark:text-white"
                                             placeholder="Please describe your symptoms..."
                                         />
                                     </div>
@@ -741,7 +732,7 @@ export default function BookAppointmentPage() {
                             </div>
 
                             {error && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
                                     {error}
                                 </div>
                             )}
@@ -749,7 +740,7 @@ export default function BookAppointmentPage() {
                             <button
                                 onClick={handleBooking}
                                 disabled={bookingLoading || loadingSlots || timeSlots.length === 0 || !selectedSlot}
-                                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+                                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold disabled:bg-neutral-400 dark:disabled:bg-neutral-700 disabled:cursor-not-allowed transition-all"
                             >
                                 {bookingLoading ? 'Processing...' : 'Proceed to Confirm'}
                             </button>
@@ -757,64 +748,63 @@ export default function BookAppointmentPage() {
 
                         {/* Summary Sidebar */}
                         <div className="lg:col-span-1">
-                            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-20">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Summary</h3>
+                            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm border border-neutral-200 dark:border-neutral-700 p-6 sticky top-20">
+                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Booking Summary</h3>
 
                                 <div className="space-y-3 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Doctor</span>
-                                        <span className="font-medium">Dr. {doctor?.firstName} {doctor?.lastName}</span>
+                                        <span className="text-neutral-600 dark:text-neutral-400">Doctor</span>
+                                        <span className="font-medium text-neutral-900 dark:text-white">Dr. {doctor?.firstName} {doctor?.lastName}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Specialty</span>
-                                        <span className="font-medium">{doctor?.specialty}</span>
+                                        <span className="text-neutral-600 dark:text-neutral-400">Specialty</span>
+                                        <span className="font-medium text-neutral-900 dark:text-white">{doctor?.specialty}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Type</span>
-                                        <span className="font-medium capitalize">{appointmentType === 'clinic' ? 'Clinic Visit' : 'Video Consultation'}</span>
+                                        <span className="text-neutral-600 dark:text-neutral-400">Type</span>
+                                        <span className="font-medium text-neutral-900 dark:text-white capitalize">{appointmentType === 'clinic' ? 'Clinic Visit' : 'Video Consultation'}</span>
                                     </div>
                                     {selectedDate && (
                                         <div className="flex justify-between">
-                                            <span className="text-gray-600">Date</span>
-                                            <span className="font-medium">{formatDateDisplay(selectedDate)}</span>
+                                            <span className="text-neutral-600 dark:text-neutral-400">Date</span>
+                                            <span className="font-medium text-neutral-900 dark:text-white">{formatDateDisplay(selectedDate)}</span>
                                         </div>
                                     )}
                                     {selectedSlot && (
                                         <div className="flex justify-between">
-                                            <span className="text-gray-600">Time</span>
-                                            <span className="font-medium text-green-600">{selectedSlot.displayTime}</span>
+                                            <span className="text-neutral-600 dark:text-neutral-400">Time</span>
+                                            <span className="font-medium text-green-600 dark:text-green-500">{selectedSlot.displayTime}</span>
                                         </div>
                                     )}
                                     {formData.bookingFor === 'family' && formData.patientName && (
                                         <div className="flex justify-between">
-                                            <span className="text-gray-600">Patient</span>
-                                            <span className="font-medium">{formData.patientName}</span>
+                                            <span className="text-neutral-600 dark:text-neutral-400">Patient</span>
+                                            <span className="font-medium text-neutral-900 dark:text-white">{formData.patientName}</span>
                                         </div>
                                     )}
-                                    <div className="flex justify-between pt-3 border-t border-gray-300/80">
-                                        <span className="text-gray-900 font-semibold">Total Amount</span>
-                                        <span className="text-green-600 font-bold text-lg">₹{doctor?.consultationFee}</span>
+                                    <div className="flex justify-between pt-3 border-t border-neutral-300/80 dark:border-neutral-700">
+                                        <span className="text-neutral-900 dark:text-white font-semibold">Total Amount</span>
+                                        <span className="text-green-600 dark:text-green-500 font-bold text-lg">₹{doctor?.consultationFee}</span>
                                     </div>
 
-                                    {/* Add this in the Summary Sidebar after the Total Amount section */}
                                     {timeSlots.length > 0 && (
-                                        <div className="mt-4 pt-3 border-t border-gray-200">
-                                            <p className="text-xs text-gray-500 mb-2">Slot Availability</p>
+                                        <div className="mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Slot Availability</p>
                                             <div className="flex justify-between text-xs">
-                                                <span className="text-gray-500">Available:</span>
-                                                <span className="text-green-600 font-semibold">
+                                                <span className="text-neutral-500 dark:text-neutral-400">Available:</span>
+                                                <span className="text-green-600 dark:text-green-500 font-semibold">
                                                     {timeSlots.filter(s => !s.isBooked).length}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between text-xs mt-1">
-                                                <span className="text-gray-500">Booked:</span>
-                                                <span className="text-red-500 font-semibold">
+                                                <span className="text-neutral-500 dark:text-neutral-400">Booked:</span>
+                                                <span className="text-red-600 dark:text-red-500 font-semibold">
                                                     {timeSlots.filter(s => s.isBooked).length}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between text-xs mt-1">
-                                                <span className="text-gray-500">Total:</span>
-                                                <span className="text-gray-700 font-semibold">
+                                                <span className="text-neutral-500 dark:text-neutral-400">Total:</span>
+                                                <span className="text-neutral-700 dark:text-neutral-300 font-semibold">
                                                     {timeSlots.length}
                                                 </span>
                                             </div>
@@ -837,36 +827,36 @@ export default function BookAppointmentPage() {
                 appointmentType={appointmentType}
             >
                 <div className="space-y-3">
-                    <p className="text-gray-600">Please confirm your appointment details:</p>
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                    <p className="text-neutral-600 dark:text-neutral-400">Please confirm your appointment details:</p>
+                    <div className="bg-neutral-50 dark:bg-neutral-800 p-4 rounded-lg space-y-2">
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Doctor:</span>
-                            <span className="font-medium">Dr. {doctor?.firstName} {doctor?.lastName}</span>
+                            <span className="text-neutral-600 dark:text-neutral-400">Doctor:</span>
+                            <span className="font-medium text-neutral-900 dark:text-white">Dr. {doctor?.firstName} {doctor?.lastName}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Date:</span>
-                            <span className="font-medium">{selectedDate && formatDateDisplay(selectedDate)}</span>
+                            <span className="text-neutral-600 dark:text-neutral-400">Date:</span>
+                            <span className="font-medium text-neutral-900 dark:text-white">{selectedDate && formatDateDisplay(selectedDate)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Time:</span>
-                            <span className="font-medium text-green-600">{selectedSlot?.displayTime}</span>
+                            <span className="text-neutral-600 dark:text-neutral-400">Time:</span>
+                            <span className="font-medium text-green-600 dark:text-green-500">{selectedSlot?.displayTime}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-600">Type:</span>
-                            <span className="font-medium capitalize">{appointmentType === 'clinic' ? 'Clinic Visit' : 'Video Consultation'}</span>
+                            <span className="text-neutral-600 dark:text-neutral-400">Type:</span>
+                            <span className="font-medium text-neutral-900 dark:text-white capitalize">{appointmentType === 'clinic' ? 'Clinic Visit' : 'Video Consultation'}</span>
                         </div>
                         {appointmentType === 'video' && (
                             <div className="flex justify-between">
-                                <span className="text-gray-600">Meeting Link:</span>
-                                <span className="font-medium text-blue-600 text-xs">Will be generated after confirmation</span>
+                                <span className="text-neutral-600 dark:text-neutral-400">Meeting Link:</span>
+                                <span className="font-medium text-blue-600 dark:text-blue-400 text-xs">Will be generated after confirmation</span>
                             </div>
                         )}
-                        <div className="flex justify-between pt-2 border-t border-gray-300/80">
-                            <span className="font-semibold">Amount:</span>
-                            <span className="font-bold text-green-600">₹{doctor?.consultationFee}</span>
+                        <div className="flex justify-between pt-2 border-t border-neutral-300/80 dark:border-neutral-700">
+                            <span className="font-semibold text-neutral-900 dark:text-white">Amount:</span>
+                            <span className="font-bold text-green-600 dark:text-green-500">₹{doctor?.consultationFee}</span>
                         </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">Click confirm to complete your booking.</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">Click confirm to complete your booking.</p>
                 </div>
             </ConfirmationModal>
         </>

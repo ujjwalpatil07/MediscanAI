@@ -144,20 +144,20 @@ export default function BlogView() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader className="w-12 h-12 text-green-600 animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <Loader className="w-12 h-12 text-green-600 dark:text-green-500 animate-spin" />
       </div>
     );
   }
 
   if (error || !blog) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || "Blog not found"}</p>
+          <p className="text-red-600 dark:text-red-400 mb-4">{error || "Blog not found"}</p>
           <button
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 dark:bg-green-600 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-700 transition"
           >
             Go Back
           </button>
@@ -167,13 +167,13 @@ export default function BlogView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-neutral-900">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       {/* Header */}
-      <div className="bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 sticky top-0 z-10">
+      <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition"
+            className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-green-600 dark:hover:text-green-400 transition"
           >
             <ChevronLeft className="w-5 h-5" />
             Back
@@ -193,26 +193,26 @@ export default function BlogView() {
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              <User className="w-6 h-6 text-green-600" />
+              <User className="w-6 h-6 text-green-600 dark:text-green-500" />
             )}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">
+            <h3 className="font-semibold text-neutral-900 dark:text-white">
               Dr. {blog.authorName}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
               {blog.authorId?.specialty || "Medical Professional"}
             </p>
           </div>
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-white mb-4">
           {blog.title}
         </h1>
 
         {/* Meta Info */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-6 pb-6 border-b border-gray-200 dark:border-neutral-700">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400 mb-6 pb-6 border-b border-neutral-200 dark:border-neutral-700">
           <span className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />
             {format(new Date(blog.publishedDate), "MMMM dd, yyyy")}
@@ -243,7 +243,7 @@ export default function BlogView() {
           {blog.tags?.map((tag, index) => (
             <span
               key={index}
-              className="px-3 py-1 text-sm bg-gray-100 dark:bg-neutral-700 text-gray-600 dark:text-gray-400 rounded-full"
+              className="px-3 py-1 text-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-full"
             >
               #{tag}
             </span>
@@ -263,17 +263,17 @@ export default function BlogView() {
 
         {/* Blog Content */}
         <div
-          className="prose prose-lg dark:prose-invert max-w-none mb-8"
+          className="prose prose-lg dark:prose-invert max-w-none mb-8 prose-neutral dark:prose-neutral"
           dangerouslySetInnerHTML={{ __html: blog.content }}
         />
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-center gap-4 py-8 border-y border-gray-200 dark:border-neutral-700">
+        <div className="flex items-center justify-center gap-4 py-8 border-y border-neutral-200 dark:border-neutral-700">
           <button
             onClick={handleLike}
             className={`flex items-center gap-2 px-6 py-3 rounded-full transition ${liked
-                ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-                : "bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-neutral-700"
+              ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700"
               }`}
           >
             <Heart className={`w-5 h-5 ${liked ? "fill-current" : ""}`} />
@@ -283,7 +283,7 @@ export default function BlogView() {
           <div className="relative">
             <button
               onClick={() => setShowShareMenu(!showShareMenu)}
-              className="flex items-center gap-2 px-6 py-3 rounded-full bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-neutral-700 transition"
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
             >
               <Share2 className="w-5 h-5" />
               Share
@@ -295,35 +295,35 @@ export default function BlogView() {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowShareMenu(false)}
                 />
-                <div className="absolute top-full mt-2 right-0 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 p-2 z-20 min-w-[200px]">
+                <div className="absolute top-full mt-2 right-0 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 p-2 z-20 min-w-[200px]">
                   <button
                     onClick={() => handleShare("facebook")}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded flex items-center gap-2"
+                    className="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded flex items-center gap-2 transition"
                   >
                     <Facebook className="w-4 h-4 text-blue-600" />
                     Facebook
                   </button>
                   <button
                     onClick={() => handleShare("twitter")}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded flex items-center gap-2"
+                    className="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded flex items-center gap-2 transition"
                   >
                     <Twitter className="w-4 h-4 text-blue-400" />
                     Twitter
                   </button>
                   <button
                     onClick={() => handleShare("linkedin")}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded flex items-center gap-2"
+                    className="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded flex items-center gap-2 transition"
                   >
                     <Linkedin className="w-4 h-4 text-blue-700" />
                     LinkedIn
                   </button>
                   <button
                     onClick={() => handleShare("copy")}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded flex items-center gap-2"
+                    className="w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded flex items-center gap-2 transition"
                   >
                     {copied ? (
                       <>
-                        <Check className="w-4 h-4 text-green-600" />
+                        <Check className="w-4 h-4 text-green-600 dark:text-green-500" />
                         Copied!
                       </>
                     ) : (
@@ -341,12 +341,12 @@ export default function BlogView() {
 
         {/* Comments Section */}
         <div className="mt-8">
-          <div className="flex items-center gap-4 mb-6 border-b border-gray-200 dark:border-neutral-700">
+          <div className="flex items-center gap-4 mb-6 border-b border-neutral-200 dark:border-neutral-700">
             <button
               onClick={() => setActiveTab("comments")}
               className={`pb-2 text-sm font-medium transition ${activeTab === "comments"
-                  ? "text-green-600 border-b-2 border-green-600"
-                  : "text-gray-500 hover:text-gray-700"
+                ? "text-green-600 dark:text-green-500 border-b-2 border-green-600 dark:border-green-500"
+                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
                 }`}
             >
               Comments ({blog.comments})
@@ -354,8 +354,8 @@ export default function BlogView() {
             <button
               onClick={() => setActiveTab("related")}
               className={`pb-2 text-sm font-medium transition ${activeTab === "related"
-                  ? "text-green-600 border-b-2 border-green-600"
-                  : "text-gray-500 hover:text-gray-700"
+                ? "text-green-600 dark:text-green-500 border-b-2 border-green-600 dark:border-green-500"
+                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
                 }`}
             >
               Related Articles
@@ -373,7 +373,7 @@ export default function BlogView() {
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Write a comment..."
                       rows={3}
-                      className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-600 resize-none"
+                      className="w-full px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-600 dark:focus:ring-green-500 resize-none transition"
                     />
                   </div>
                 </div>
@@ -381,7 +381,7 @@ export default function BlogView() {
                   <button
                     type="submit"
                     disabled={submitting || !newComment.trim()}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 bg-green-600 dark:bg-green-600 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-700 transition disabled:opacity-50 flex items-center gap-2"
                   >
                     {submitting ? (
                       <Loader className="w-4 h-4 animate-spin" />
@@ -399,11 +399,11 @@ export default function BlogView() {
                   comments.map((comment) => (
                     <div
                       key={comment._id}
-                      className="bg-white dark:bg-neutral-800 rounded-lg p-4 border border-gray-200 dark:border-neutral-700"
+                      className="bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700 transition"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-700 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
                             {comment.userAvatar ? (
                               <img
                                 src={comment.userAvatar}
@@ -411,19 +411,19 @@ export default function BlogView() {
                                 className="w-full h-full rounded-full object-cover"
                               />
                             ) : (
-                              <User className="w-4 h-4 text-gray-600" />
+                              <User className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
                             )}
                           </div>
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900 dark:text-white">
+                              <span className="font-medium text-neutral-900 dark:text-white">
                                 {comment.userName}
                               </span>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-neutral-500 dark:text-neutral-400">
                                 {format(new Date(comment.createdAt), "MMM dd, yyyy")}
                               </span>
                             </div>
-                            <p className="text-gray-700 dark:text-gray-300">
+                            <p className="text-neutral-700 dark:text-neutral-300">
                               {comment.comment}
                             </p>
                           </div>
@@ -434,7 +434,7 @@ export default function BlogView() {
                               onClick={() => handleDeleteComment(comment._id)}
                               className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                             >
-                              <Trash2 className="w-4 h-4 text-red-500" />
+                              <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
                             </button>
                           )}
                       </div>
@@ -442,8 +442,8 @@ export default function BlogView() {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No comments yet. Be the first to comment!</p>
+                    <MessageCircle className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
+                    <p className="text-neutral-500 dark:text-neutral-400">No comments yet. Be the first to comment!</p>
                   </div>
                 )}
               </div>
@@ -456,7 +456,7 @@ export default function BlogView() {
                 <Link
                   key={relatedBlog._id}
                   to={`/blogs/${relatedBlog._id}`}
-                  className="bg-white dark:bg-neutral-800 rounded-lg p-4 border border-gray-200 dark:border-neutral-700 hover:border-green-300 transition"
+                  className="bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700 hover:border-green-300 dark:hover:border-green-700 transition group"
                 >
                   {relatedBlog.coverImage && (
                     <img
@@ -465,13 +465,13 @@ export default function BlogView() {
                       className="w-full h-40 object-cover rounded-lg mb-3"
                     />
                   )}
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                  <h4 className="font-semibold text-neutral-900 dark:text-white mb-2 line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-500 transition">
                     {relatedBlog.title}
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-2">
                     {relatedBlog.excerpt}
                   </p>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-500">
                     <span className="flex items-center gap-1">
                       <Eye className="w-3 h-3" />
                       {relatedBlog.views}

@@ -58,7 +58,7 @@ const LoadingSkeleton = () => (
 
 // Team Member Card Component
 const TeamMemberCard = ({ member }) => (
-  <div className="group bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+  <div className="group bg-gray-100 dark:bg-neutral-800 rounded-xl shadow-sm p-6 text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
     <div className="relative">
       <div className="w-24 h-24 rounded-full bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
         {member.profilePhoto ? (
@@ -151,7 +151,7 @@ const TestimonialCard = ({ testimonial }) => (
 const FeatureCard = ({ feature, index }) => {
   const Icon = feature.icon;
   return (
-    <div className="group bg-gray-50 dark:bg-neutral-700/50 rounded-xl p-6 hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+    <div className="group bg-gray-100 dark:bg-neutral-700/50 rounded-xl p-6 hover:shadow-md transition-all duration-300 hover:-translate-y-1">
       <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
         <Icon className="w-6 h-6" />
       </div>
@@ -345,7 +345,7 @@ export default function AboutUs() {
   const displayStats = [
     {
       icon: Users,
-      value: stats?.totalPatients ? `${Math.floor(stats.totalPatients / 1000)}K+` : "10,000+",
+      value: stats?.totalPatients ? `${stats.totalPatients}+` : "10,000+",
       label: "Happy Patients",
       color: "text-blue-600 dark:text-blue-400"
     },
@@ -357,7 +357,7 @@ export default function AboutUs() {
     },
     {
       icon: Activity,
-      value: stats?.totalAppointments ? `${Math.floor(stats.totalAppointments / 1000)}K+` : "50,000+",
+      value: stats?.totalAppointments ? `${stats.totalAppointments}+` : "50,000+",
       label: "Consultations",
       color: "text-purple-600 dark:text-purple-400"
     },
@@ -398,7 +398,7 @@ export default function AboutUs() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 -mt-10">
+      <section className="pt-12 -mt-5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {displayStats.map((stat, index) => {
@@ -406,7 +406,7 @@ export default function AboutUs() {
               return (
                 <div
                   key={index}
-                  className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6 text-center hover:shadow-md transition-all hover:-translate-y-1 duration-300"
+                  className="bg-gray-100 dark:bg-neutral-800 rounded-xl shadow-sm p-6 text-center hover:shadow-md transition-all hover:-translate-y-1 duration-300"
                 >
                   <Icon className={`w-8 h-8 ${stat.color} mx-auto mb-3`} />
                   <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
@@ -426,7 +426,7 @@ export default function AboutUs() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-8 hover:shadow-lg transition-all duration-300">
+            <div className="bg-gray-100 dark:bg-neutral-800 rounded-2xl shadow-sm p-8 hover:shadow-lg transition-all duration-300">
               <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-4">
                 <Activity className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
@@ -441,7 +441,7 @@ export default function AboutUs() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-8 hover:shadow-lg transition-all duration-300">
+            <div className="bg-gray-100 dark:bg-neutral-800 rounded-2xl shadow-sm p-8 hover:shadow-lg transition-all duration-300">
               <div className="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center mb-4">
                 <Globe className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>

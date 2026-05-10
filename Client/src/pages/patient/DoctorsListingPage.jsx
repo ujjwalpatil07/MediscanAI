@@ -24,6 +24,7 @@ import {
 import toast from "react-hot-toast";
 import { getAllDoctorsService } from "../../services/doctor.service";
 import Loader from "../../components/common/Loader";
+import MedicalBackground from "../../components/common/MedicalBackground";
 
 export default function DoctorsListingPage() {
     const [doctors, setDoctors] = useState([]);
@@ -32,7 +33,7 @@ export default function DoctorsListingPage() {
     const [selectedSpecialty, setSelectedSpecialty] = useState("All Specialties");
     const [sortBy, setSortBy] = useState("rating");
     const [specialties, setSpecialties] = useState(["All Specialties"]);
-    const [viewMode, setViewMode] = useState("grid"); // grid or list
+    const [viewMode, setViewMode] = useState("grid");
 
     // Fetch doctors from API
     const fetchDoctors = useCallback(async () => {
@@ -88,20 +89,20 @@ export default function DoctorsListingPage() {
 
     // Helper function to get rating color
     const getRatingColor = (rating) => {
-        if (rating >= 4.5) return "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30";
-        if (rating >= 4.0) return "text-green-600 bg-green-50 dark:bg-green-900/30";
-        if (rating >= 3.5) return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30";
-        return "text-orange-600 bg-orange-50 dark:bg-orange-900/30";
+        if (rating >= 4.5) return "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400";
+        if (rating >= 4) return "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400";
+        if (rating >= 3.5) return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-400";
+        return "text-orange-600 bg-orange-50 dark:bg-orange-900/30 dark:text-orange-400";
     };
 
     // Grid View Card Component
     const DoctorGridCard = ({ doctor }) => (
-        <div className="group relative bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-gray-100 dark:border-gray-700">
+        <div className="group relative bg-white dark:bg-neutral-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-neutral-200 dark:border-neutral-800">
             {/* Top Gradient Bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
 
             {/* Profile Image Section */}
-            <div className="relative h-56 overflow-hidden bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900/30 dark:to-teal-900/30">
+            <div className="relative h-56 overflow-hidden bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20">
                 <img
                     src={doctor.profilePhoto || `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff&size=150&bold=true&length=2`}
                     alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
@@ -141,10 +142,10 @@ export default function DoctorsListingPage() {
 
                 {/* Quick Actions Overlay */}
                 <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                    <button className="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors">
+                    <button className="bg-white dark:bg-neutral-800 rounded-full p-2 shadow-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors">
                         <Heart className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
-                    <button className="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors">
+                    <button className="bg-white dark:bg-neutral-800 rounded-full p-2 shadow-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors">
                         <MessageCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </button>
                 </div>
@@ -163,7 +164,7 @@ export default function DoctorsListingPage() {
                         </p>
                         {doctor.subSpecialty && (
                             <>
-                                <span className="text-gray-300 dark:text-gray-600">•</span>
+                                <span className="text-gray-300 dark:text-neutral-700">•</span>
                                 <p className="text-gray-500 dark:text-gray-400 text-xs">{doctor.subSpecialty}</p>
                             </>
                         )}
@@ -173,25 +174,25 @@ export default function DoctorsListingPage() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                     {doctor.yearsOfExperience > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1.5">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-neutral-800/50 rounded-lg px-2 py-1.5">
                             <Briefcase className="w-3.5 h-3.5 text-emerald-500" />
                             <span className="text-xs">{doctor.yearsOfExperience}+ yrs</span>
                         </div>
                     )}
                     {doctor.totalPatients > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1.5">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-neutral-800/50 rounded-lg px-2 py-1.5">
                             <Users className="w-3.5 h-3.5 text-blue-500" />
                             <span className="text-xs">{doctor.totalPatients}+ patients</span>
                         </div>
                     )}
                     {doctor.totalAppointments > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1.5">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-neutral-800/50 rounded-lg px-2 py-1.5">
                             <Calendar className="w-3.5 h-3.5 text-purple-500" />
                             <span className="text-xs">{doctor.totalAppointments}+ apps</span>
                         </div>
                     )}
                     {doctor.consultationFee > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1.5">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-neutral-800/50 rounded-lg px-2 py-1.5">
                             <DollarSign className="w-3.5 h-3.5 text-green-500" />
                             <span className="text-xs">₹{doctor.consultationFee}</span>
                         </div>
@@ -229,7 +230,7 @@ export default function DoctorsListingPage() {
                             </span>
                         ))}
                         {doctor.availableDays.length > 3 && (
-                            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded">
+                            <span className="text-xs bg-gray-100 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded">
                                 +{doctor.availableDays.length - 3}
                             </span>
                         )}
@@ -240,7 +241,7 @@ export default function DoctorsListingPage() {
                 <div className="flex gap-3">
                     <Link
                         to={`/doctor/${doctor._id}`}
-                        className="flex-1 text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2.5 rounded-xl font-medium transition-all text-sm group-hover:shadow-md"
+                        className="flex-1 text-center bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-300 py-2.5 rounded-xl font-medium transition-all text-sm group-hover:shadow-md"
                     >
                         View Profile
                     </Link>
@@ -257,10 +258,10 @@ export default function DoctorsListingPage() {
 
     // List View Card Component
     const DoctorListCard = ({ doctor }) => (
-        <div className="group bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 overflow-hidden border border-gray-100 dark:border-gray-700">
+        <div className="group bg-white dark:bg-neutral-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 overflow-hidden border border-neutral-200 dark:border-neutral-800">
             <div className="flex flex-col md:flex-row">
                 {/* Image Section */}
-                <div className="relative md:w-48 h-48 md:h-auto overflow-hidden bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900/30 dark:to-teal-900/30">
+                <div className="relative md:w-48 h-48 md:h-auto overflow-hidden bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20">
                     <img
                         src={doctor.profilePhoto || `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff&size=150&bold=true&length=2`}
                         alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
@@ -340,7 +341,7 @@ export default function DoctorsListingPage() {
                         <div className="flex flex-row md:flex-col gap-3">
                             <Link
                                 to={`/doctor/${doctor._id}`}
-                                className="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-all text-center"
+                                className="px-6 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-800 text-gray-700 dark:text-gray-300 font-medium transition-all text-center"
                             >
                                 View Profile
                             </Link>
@@ -362,7 +363,9 @@ export default function DoctorsListingPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#0f1a24] dark:to-[#0a1520]">
+        <div className="relative min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-neutral-950 dark:to-neutral-900">
+
+            <MedicalBackground />
             {/* Hero Banner */}
             <div className="relative bg-gradient-to-r from-green-600 via-emerald-600 to-teal-700 dark:from-[#0a2a2a] dark:via-[#0a3535] dark:to-[#063333] overflow-hidden">
                 <div className="absolute inset-0 bg-black/10"></div>
@@ -376,12 +379,10 @@ export default function DoctorsListingPage() {
                         Browse through our list of certified and experienced medical professionals
                     </p>
                 </div>
-                {/* Decorative Shapes */}
-                {/* <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-gray-50 dark:from-[#0f1a24] to-transparent"></div> */}
             </div>
 
             {/* Search and Filter Section */}
-            <div className="sticky top-0 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md py-4 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+            <div className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md py-4 border-b border-neutral-200 dark:border-neutral-800 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col lg:flex-row gap-4">
                         {/* Search Bar */}
@@ -392,7 +393,7 @@ export default function DoctorsListingPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search by doctor name, specialty, city, or qualification..."
-                                className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                             />
                         </div>
 
@@ -402,7 +403,7 @@ export default function DoctorsListingPage() {
                             <select
                                 value={selectedSpecialty}
                                 onChange={(e) => setSelectedSpecialty(e.target.value)}
-                                className="px-5 py-3.5 pr-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
+                                className="px-5 py-3.5 pr-10 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
                             >
                                 {specialties.map((specialty, idx) => (
                                     <option key={idx} value={specialty}>{specialty}</option>
@@ -413,7 +414,7 @@ export default function DoctorsListingPage() {
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="px-5 py-3.5 pr-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
+                                className="px-5 py-3.5 pr-10 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
                             >
                                 <option value="rating">Sort by Rating</option>
                                 <option value="experience">Sort by Experience</option>
@@ -421,10 +422,10 @@ export default function DoctorsListingPage() {
                             </select>
 
                             {/* View Toggle */}
-                            <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div className="flex rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
                                 <button
                                     onClick={() => setViewMode("grid")}
-                                    className={`px-4 py-3.5 transition-colors ${viewMode === "grid" ? "bg-green-600 text-white" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                                    className={`px-4 py-3.5 transition-colors ${viewMode === "grid" ? "bg-green-600 text-white" : "bg-white dark:bg-neutral-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800"}`}
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -432,7 +433,7 @@ export default function DoctorsListingPage() {
                                 </button>
                                 <button
                                     onClick={() => setViewMode("list")}
-                                    className={`px-4 py-3.5 transition-colors ${viewMode === "list" ? "bg-green-600 text-white" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                                    className={`px-4 py-3.5 transition-colors ${viewMode === "list" ? "bg-green-600 text-white" : "bg-white dark:bg-neutral-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800"}`}
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -444,7 +445,7 @@ export default function DoctorsListingPage() {
                             {(searchQuery || selectedSpecialty !== "All Specialties" || sortBy !== "rating") && (
                                 <button
                                     onClick={clearFilters}
-                                    className="flex items-center gap-2 px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                    className="flex items-center gap-2 px-5 py-3.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                                 >
                                     <X className="w-4 h-4" />
                                     Clear
@@ -474,7 +475,7 @@ export default function DoctorsListingPage() {
                 {/* Doctors Grid/List */}
                 {filteredDoctors.length === 0 ? (
                     <div className="text-center py-20">
-                        <div className="w-32 h-32 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <div className="w-32 h-32 mx-auto mb-6 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
                             <User className="w-16 h-16 text-gray-400 dark:text-gray-500" />
                         </div>
                         <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">No doctors found</h3>
