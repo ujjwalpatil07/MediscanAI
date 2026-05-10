@@ -6,7 +6,8 @@ export default function ConfirmationModal({
     onConfirm,
     title,
     children,
-    loading = false
+    loading = false,
+    appointmentType
 }) {
     if (!isOpen) return null;
 
@@ -46,9 +47,11 @@ export default function ConfirmationModal({
                                 Booking...
                             </>
                         ) : (
-                            "Confirm Booking"
+                            (appointmentType === "video" ? "Proceed to Pay" : "Confirm Booking")
                         )}
                     </button>
+
+                    
 
                     <button
                         onClick={onClose}

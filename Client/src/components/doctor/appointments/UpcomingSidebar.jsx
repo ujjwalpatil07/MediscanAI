@@ -1,47 +1,69 @@
-// components/doctor/appointments/UpcomingSidebar.jsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import PropTypes from "prop-types";
-import { Clock, Calendar, ChevronRight, Video, Building2, Loader } from "lucide-react";
+import { Clock, Calendar, Video, Building2, Loader } from "lucide-react";
 
-export default function UpcomingSidebar({ upcomingAppointments, loading }) {
+function UpcomingSidebar({ appointments, loading }) {
   const [showAll, setShowAll] = useState(false);
-  const displayAppointments = showAll
-    ? upcomingAppointments
-    : upcomingAppointments.slice(0, 5);
+  const now = new Date();
 
-  const formatTimeRemaining = (dateString, time) => {
-    if (!dateString || !time) return "Date not set";
-    const appointmentDateTime = new Date(`${dateString}T${time}`);
-    const now = new Date();
-    const diff = appointmentDateTime - now;
+  const todayAppointments = useMemo(() => {
+    const todayStr = now.toLocaleDateString("en-CA");
 
-    if (diff < 0) return "Started";
+    return (appointments || [])
+      .filter((appt) => {
+        if (!appt?.appointmentDate) return false;
+        const apptDate = new Date(appt.appointmentDate);
+        const apptDateStr = apptDate.toLocaleDateString("en-CA");
+        return apptDateStr === todayStr && appt?.status === "upcoming";
+      })
+      .sort((a, b) => {
+        const timeA = new Date(a?.appointmentTime || a?.appointmentDate);
+        const timeB = new Date(b?.appointmentTime || b?.appointmentDate);
+        return timeA - timeB;
+      });
+  }, [appointments]);
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(
-      (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-    );
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const { future, past } = useMemo(() => {
+    const f = [];
+    const p = [];
+    todayAppointments.forEach((appt) => {
+      const apptTime = new Date(appt?.appointmentTime);
+      if (isNaN(apptTime.getTime()) || apptTime <= now) {
+        p.push(appt);
+      } else {
+        f.push(appt);
+      }
+    });
+    return { future: f, past: p };
+  }, [todayAppointments]);
 
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    if (minutes > 0) return `${minutes}m`;
+  const display = showAll ? [...future, ...past] : [...future, ...past].slice(0, 5);
+
+  const fmtRemaining = (timeStr) => {
+    if (!timeStr) return "";
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return "";
+    const diff = d - now;
+    if (diff < 0) return "Ended";
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(mins / 60);
+    if (hrs > 0) return `${hrs}h ${mins % 60}m`;
+    if (mins > 0) return `${mins}m`;
     return "Now";
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "Date not set";
-    const options = { month: "short", day: "numeric", year: "numeric" };
-    return new Date(dateString).toLocaleDateString("en-US", options);
+  const fmtTime = (d) => {
+    if (!d) return "";
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return "";
+    const h = date.getHours() % 12 || 12;
+    const m = date.getMinutes().toString().padStart(2, "0");
+    const ampm = date.getHours() >= 12 ? "PM" : "AM";
+    return `${h}:${m} ${ampm}`;
   };
 
-  const formatTime = (time) => {
-    if (!time) return "Time not set";
-    const [hours, minutes] = time.split(":");
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minutes} ${ampm}`;
+  const getInitials = (firstName, lastName) => {
+    return `${firstName?.[0] || "?"}${lastName?.[0] || ""}`;
   };
 
   if (loading) {
@@ -49,9 +71,7 @@ export default function UpcomingSidebar({ upcomingAppointments, loading }) {
       <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-5 sticky top-20">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="w-5 h-5 text-green-600 dark:text-green-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Upcoming
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Today&apos;s Schedule</h3>
         </div>
         <div className="flex justify-center py-8">
           <Loader className="w-6 h-6 text-green-600 animate-spin" />
@@ -60,93 +80,78 @@ export default function UpcomingSidebar({ upcomingAppointments, loading }) {
     );
   }
 
+  const totalCount = future.length + past.length;
+
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-5 sticky top-20">
       <div className="flex items-center gap-2 mb-4">
         <Clock className="w-5 h-5 text-green-600 dark:text-green-400" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Upcoming
-        </h3>
-        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
-          {upcomingAppointments.length}
-        </span>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Today&apos;s Schedule</h3>
+        {totalCount > 0 && (
+          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
+            {future.length} upcoming
+          </span>
+        )}
       </div>
 
-      {upcomingAppointments.length > 0 ? (
+      {totalCount > 0 ? (
         <>
-          <div className="space-y-3">
-            {displayAppointments.map((appointment) => (
-              <div
-                key={appointment._id}
-                className="p-3 rounded-lg bg-gray-50 dark:bg-neutral-700/50 border border-gray-200 dark:border-neutral-700 hover:border-green-300 dark:hover:border-green-700 transition-all duration-300 group cursor-pointer"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                      {appointment.patient?.firstName?.[0] || '?'}
-                      {appointment.patient?.lastName?.[0] || ''}
-                    </span>
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate pr-2">
-                        {appointment.patient?.firstName || "Unknown"} {appointment.patient?.lastName || ""}
-                      </h4>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                        {appointment.appointmentType === "online" ? (
-                          <Video className="w-3 h-3" />
-                        ) : (
-                          <Building2 className="w-3 h-3" />
-                        )}
+          <div className="space-y-2">
+            {display.map((appt) => {
+              const apptTime = new Date(appt?.appointmentTime);
+              const passed = isNaN(apptTime.getTime()) || apptTime <= now;
+              return (
+                <div
+                  key={appt?._id}
+                  className={`p-3 rounded-lg border transition-all duration-200 ${passed
+                      ? "bg-gray-100/50 dark:bg-neutral-700/30 border-gray-200 dark:border-neutral-700 opacity-50"
+                      : "bg-gray-50 dark:bg-neutral-700/50 border-gray-200 dark:border-neutral-700 hover:border-green-300 dark:hover:border-green-700"
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${passed ? "bg-gray-200 dark:bg-neutral-600" : "bg-green-100 dark:bg-green-900/30"
+                      }`}>
+                      <span className={`text-xs font-semibold ${passed ? "text-gray-500" : "text-green-600 dark:text-green-400"
+                        }`}>
+                        {getInitials(appt?.patient?.firstName, appt?.patient?.lastName)}
                       </span>
                     </div>
-
-                    <div className="mt-1 space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                        <Calendar className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">
-                          {formatDate(appointment.appointmentDate)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className={`text-xs font-semibold truncate pr-2 ${passed ? "text-gray-400 line-through" : "text-gray-900 dark:text-white"
+                          }`}>
+                          {appt?.patient?.firstName || "?"} {appt?.patient?.lastName?.[0] || ""}.
+                        </h4>
+                        <span className="text-xs text-gray-400 flex-shrink-0">
+                          {appt?.appointmentType === "online" ? <Video className="w-3 h-3" /> : <Building2 className="w-3 h-3" />}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs">
+                      <div className="mt-1 flex items-center gap-1.5 text-xs">
                         <Clock className="w-3 h-3 flex-shrink-0" />
-                        <span className="text-green-600 dark:text-green-400 font-medium">
-                          {formatTimeRemaining(
-                            appointment.appointmentDate,
-                            appointment.appointmentTime
-                          )}
+                        <span className={passed ? "text-gray-400" : "text-green-600 dark:text-green-400 font-medium"}>
+                          {passed ? "Ended" : fmtRemaining(appt?.appointmentTime)}
                         </span>
-                        <span className="text-gray-500 dark:text-gray-400">
-                          • {formatTime(appointment.appointmentTime)}
-                        </span>
+                        <span className="text-gray-400">• {fmtTime(appt?.appointmentTime)}</span>
                       </div>
                     </div>
                   </div>
-
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition flex-shrink-0 mt-2" />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-
-          {upcomingAppointments.length > 5 && (
+          {totalCount > 5 && (
             <button
               onClick={() => setShowAll(!showAll)}
-              className="w-full mt-4 text-center text-sm text-green-600 dark:text-green-400 hover:underline"
+              className="w-full mt-3 text-center text-xs text-green-600 dark:text-green-400 hover:underline"
             >
-              {showAll
-                ? "Show less"
-                : `View all ${upcomingAppointments.length} upcoming`}
+              {showAll ? "Show less" : `View all ${totalCount}`}
             </button>
           )}
         </>
       ) : (
         <div className="text-center py-8">
           <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            No upcoming appointments
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No appointments today</p>
         </div>
       )}
     </div>
@@ -154,10 +159,13 @@ export default function UpcomingSidebar({ upcomingAppointments, loading }) {
 }
 
 UpcomingSidebar.propTypes = {
-  upcomingAppointments: PropTypes.array.isRequired,
+  appointments: PropTypes.array,
   loading: PropTypes.bool,
 };
 
 UpcomingSidebar.defaultProps = {
+  appointments: [],
   loading: false,
 };
+
+export default UpcomingSidebar;

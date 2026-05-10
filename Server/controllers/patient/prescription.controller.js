@@ -59,7 +59,6 @@ export const createPrescription = async (req, res) => {
 
     const { appointmentId, medicines, notes } = req.body;
 
-    // ✅ Basic validation
     if (!appointmentId || !Array.isArray(medicines) || medicines.length === 0) {
       throw { status: 400, message: "Appointment and medicines are required" };
     }
@@ -70,12 +69,10 @@ export const createPrescription = async (req, res) => {
       throw { status: 404, message: "Appointment not found" };
     }
 
-    // ✅ Ownership check
     if (appointment.doctorId.toString() !== doctorId) {
       throw { status: 403, message: "Unauthorized" };
     }
 
-    // ✅ Prevent duplicate (better approach)
     const existingPrescription = await Prescription.findOne({
       appointmentId,
     }).session(session);
@@ -95,33 +92,34 @@ export const createPrescription = async (req, res) => {
       throw { status: 404, message: "Doctor not found" };
     }
 
-    // ✅ Optional: validate medicines structure
     for (const med of medicines) {
       if (!med.name || !med.dosage) {
         throw { status: 400, message: "Invalid medicine format" };
       }
     }
 
-    // ✅ Create prescription
+    // ✅ Map appointmentType: "online" → "video"
+    const mappedAppointmentType =
+      appointment.appointmentType === "online"
+        ? "video"
+        : appointment.appointmentType;
+
     const prescription = await Prescription.create(
       [
         {
           appointmentId,
           doctorId,
           patientId: appointment.patientId,
-
           patientSnapshot: {
             name: `${patient.firstName} ${patient.lastName}`,
             relation: appointment.patientDetails?.relation || "self",
             age: appointment.patientDetails?.age,
           },
-
           doctorSnapshot: {
             name: `Dr. ${doctor.firstName} ${doctor.lastName}`,
             specialty: doctor.specialty,
           },
-
-          appointmentType: appointment.appointmentType,
+          appointmentType: mappedAppointmentType,
           notes,
           medicines,
         },
@@ -131,7 +129,6 @@ export const createPrescription = async (req, res) => {
 
     const createdPrescription = prescription[0];
 
-    // ✅ Update related docs
     patient.prescriptions.push(createdPrescription._id);
     doctor.prescriptions.push(createdPrescription._id);
     appointment.prescriptionId = createdPrescription._id;
@@ -149,7 +146,6 @@ export const createPrescription = async (req, res) => {
     });
   } catch (err) {
     await session.abortTransaction();
-
     return res.status(err.status || 500).json({
       success: false,
       message: err.message || "Something went wrong",
@@ -255,3 +251,4 @@ export const deletePrescription = async (req, res) => {
     });
   }
 };
+ 

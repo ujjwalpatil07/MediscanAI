@@ -8,10 +8,18 @@ import {
     Briefcase,
     CheckCircle,
     ChevronRight,
-    Filter,
     X,
     User,
-    Stethoscope
+    Stethoscope,
+    Calendar,
+    GraduationCap,
+    Languages,
+    Heart,
+    Sparkles,
+    Shield,
+    TrendingUp,
+    Users,
+    MessageCircle
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAllDoctorsService } from "../../services/doctor.service";
@@ -23,8 +31,8 @@ export default function DoctorsListingPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedSpecialty, setSelectedSpecialty] = useState("All Specialties");
     const [sortBy, setSortBy] = useState("rating");
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [specialties, setSpecialties] = useState(["All Specialties"]);
+    const [viewMode, setViewMode] = useState("grid"); // grid or list
 
     // Fetch doctors from API
     const fetchDoctors = useCallback(async () => {
@@ -37,9 +45,8 @@ export default function DoctorsListingPage() {
 
             const response = await getAllDoctorsService(params);
 
-            if (response.data.success) {
-                setDoctors(response.data.data);
-                // Extract unique specialties from fetched doctors
+            if (response?.data?.success) {
+                setDoctors(response?.data?.data);
                 const uniqueSpecialties = ["All Specialties", ...new Set(
                     response.data.data.map(doc => doc.specialty).filter(Boolean)
                 )];
@@ -55,58 +62,328 @@ export default function DoctorsListingPage() {
         }
     }, [sortBy, selectedSpecialty]);
 
-    // Initial fetch and when filters change
     useEffect(() => {
         fetchDoctors();
     }, [fetchDoctors]);
 
-    // Filter doctors based on search query (client-side filtering for better UX)
     const filteredDoctors = useMemo(() => {
         let filtered = doctors;
-
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(doctor =>
                 `${doctor.firstName} ${doctor.lastName}`.toLowerCase().includes(query) ||
                 doctor.specialty?.toLowerCase().includes(query) ||
-                doctor.clinicCity?.toLowerCase().includes(query)
+                doctor.clinicCity?.toLowerCase().includes(query) ||
+                doctor.medicalDegree?.toLowerCase().includes(query)
             );
         }
-
         return filtered;
     }, [doctors, searchQuery]);
 
-    // Clear all filters
     const clearFilters = () => {
         setSearchQuery("");
         setSelectedSpecialty("All Specialties");
         setSortBy("rating");
     };
 
-    // Handle sort change
-    const handleSortChange = (value) => {
-        setSortBy(value);
+    // Helper function to get rating color
+    const getRatingColor = (rating) => {
+        if (rating >= 4.5) return "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30";
+        if (rating >= 4.0) return "text-green-600 bg-green-50 dark:bg-green-900/30";
+        if (rating >= 3.5) return "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30";
+        return "text-orange-600 bg-orange-50 dark:bg-orange-900/30";
     };
 
-    // Loading state
+    // Grid View Card Component
+    const DoctorGridCard = ({ doctor }) => (
+        <div className="group relative bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2 border border-gray-100 dark:border-gray-700">
+            {/* Top Gradient Bar */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+
+            {/* Profile Image Section */}
+            <div className="relative h-56 overflow-hidden bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900/30 dark:to-teal-900/30">
+                <img
+                    src={doctor.profilePhoto || `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff&size=150&bold=true&length=2`}
+                    alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff&size=150&bold=true&length=2`;
+                    }}
+                />
+
+                {/* Overlay Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+
+                {/* Badges */}
+                <div className="absolute top-3 left-3 flex gap-2">
+                    {doctor.isVerified && (
+                        <div className="bg-emerald-500 text-white rounded-full px-2.5 py-1 text-xs font-semibold flex items-center gap-1 shadow-lg">
+                            <CheckCircle className="w-3 h-3" />
+                            Verified
+                        </div>
+                    )}
+                    {doctor.successRate >= 95 && (
+                        <div className="bg-amber-500 text-white rounded-full px-2.5 py-1 text-xs font-semibold flex items-center gap-1 shadow-lg">
+                            <Sparkles className="w-3 h-3" />
+                            Top Rated
+                        </div>
+                    )}
+                </div>
+
+                {/* Rating Badge */}
+                {doctor.rating > 0 && (
+                    <div className={`absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-xs font-semibold flex items-center gap-1 shadow-lg ${getRatingColor(doctor.rating)}`}>
+                        <Star className="w-3 h-3 fill-current" />
+                        <span>{doctor.rating.toFixed(1)}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">({doctor.totalReviews || 0})</span>
+                    </div>
+                )}
+
+                {/* Quick Actions Overlay */}
+                <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                    <button className="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors">
+                        <Heart className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                    <button className="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors">
+                        <MessageCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Doctor Info */}
+            <div className="p-5">
+                <div className="mb-3">
+                    <h3 className="font-bold text-xl text-gray-900 dark:text-white mb-1 line-clamp-1">
+                        Dr. {doctor.firstName} {doctor.lastName}
+                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center gap-1">
+                            <Stethoscope className="w-3.5 h-3.5" />
+                            {doctor.specialty || "General Physician"}
+                        </p>
+                        {doctor.subSpecialty && (
+                            <>
+                                <span className="text-gray-300 dark:text-gray-600">•</span>
+                                <p className="text-gray-500 dark:text-gray-400 text-xs">{doctor.subSpecialty}</p>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                    {doctor.yearsOfExperience > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1.5">
+                            <Briefcase className="w-3.5 h-3.5 text-emerald-500" />
+                            <span className="text-xs">{doctor.yearsOfExperience}+ yrs</span>
+                        </div>
+                    )}
+                    {doctor.totalPatients > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1.5">
+                            <Users className="w-3.5 h-3.5 text-blue-500" />
+                            <span className="text-xs">{doctor.totalPatients}+ patients</span>
+                        </div>
+                    )}
+                    {doctor.totalAppointments > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-purple-500" />
+                            <span className="text-xs">{doctor.totalAppointments}+ apps</span>
+                        </div>
+                    )}
+                    {doctor.consultationFee > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1.5">
+                            <DollarSign className="w-3.5 h-3.5 text-green-500" />
+                            <span className="text-xs">₹{doctor.consultationFee}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Location & Education */}
+                <div className="space-y-2 mb-4">
+                    {doctor.clinicCity && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <MapPin className="w-3.5 h-3.5 text-red-400" />
+                            <span className="line-clamp-1">{doctor.clinicCity}{doctor.clinicState ? `, ${doctor.clinicState}` : ''}</span>
+                        </div>
+                    )}
+                    {doctor.medicalDegree && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
+                            <span className="line-clamp-1">{doctor.medicalDegree}{doctor.university ? `, ${doctor.university}` : ''}</span>
+                        </div>
+                    )}
+                    {doctor.languages?.length > 0 && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <Languages className="w-3.5 h-3.5 text-purple-400" />
+                            <span>{doctor.languages.slice(0, 2).join(", ")}{doctor.languages.length > 2 && ` +${doctor.languages.length - 2}`}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Available Days Badges */}
+                {doctor.availableDays?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-4">
+                        {doctor.availableDays.slice(0, 3).map((day, idx) => (
+                            <span key={idx} className="text-xs bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded">
+                                {day.slice(0, 3)}
+                            </span>
+                        ))}
+                        {doctor.availableDays.length > 3 && (
+                            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded">
+                                +{doctor.availableDays.length - 3}
+                            </span>
+                        )}
+                    </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                    <Link
+                        to={`/doctor/${doctor._id}`}
+                        className="flex-1 text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2.5 rounded-xl font-medium transition-all text-sm group-hover:shadow-md"
+                    >
+                        View Profile
+                    </Link>
+                    <Link
+                        to={`/p/book-appointment/${doctor._id}`}
+                        className="flex-1 text-center bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2.5 rounded-xl font-medium transition-all text-sm flex items-center justify-center gap-1 shadow-md hover:shadow-lg"
+                    >
+                        Book <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+
+    // List View Card Component
+    const DoctorListCard = ({ doctor }) => (
+        <div className="group bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl transition-all duration-500 overflow-hidden border border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col md:flex-row">
+                {/* Image Section */}
+                <div className="relative md:w-48 h-48 md:h-auto overflow-hidden bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900/30 dark:to-teal-900/30">
+                    <img
+                        src={doctor.profilePhoto || `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff&size=150&bold=true&length=2`}
+                        alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff&size=150&bold=true&length=2`;
+                        }}
+                    />
+
+                    {/* Badges */}
+                    <div className="absolute top-3 left-3 flex gap-2">
+                        {doctor.isVerified && (
+                            <div className="bg-emerald-500 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Verified
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Content Section */}
+                <div className="flex-1 p-6">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                <h3 className="font-bold text-xl text-gray-900 dark:text-white">
+                                    Dr. {doctor.firstName} {doctor.lastName}
+                                </h3>
+                                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${getRatingColor(doctor.rating)}`}>
+                                    <Star className="w-3 h-3 fill-current" />
+                                    <span>{doctor.rating?.toFixed(1) || "New"}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-4 mb-3">
+                                <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium flex items-center gap-1">
+                                    <Stethoscope className="w-4 h-4" />
+                                    {doctor.specialty || "General Physician"}
+                                </span>
+                                <span className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1">
+                                    <Briefcase className="w-4 h-4" />
+                                    {doctor.yearsOfExperience || 0}+ Years Experience
+                                </span>
+                                <span className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1">
+                                    <Users className="w-4 h-4" />
+                                    {doctor.totalPatients || 0}+ Patients
+                                </span>
+                            </div>
+
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+                                {doctor.bio || `${doctor.firstName} ${doctor.lastName} is a renowned ${doctor.specialty || "medical professional"} with extensive experience in patient care.`}
+                            </p>
+
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                                {doctor.medicalDegree && (
+                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                        <GraduationCap className="w-4 h-4" />
+                                        <span>{doctor.medicalDegree}</span>
+                                    </div>
+                                )}
+                                {doctor.clinicCity && (
+                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                        <MapPin className="w-4 h-4" />
+                                        <span>{doctor.clinicCity}</span>
+                                    </div>
+                                )}
+                                {doctor.consultationFee > 0 && (
+                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                        <DollarSign className="w-4 h-4" />
+                                        <span>₹{doctor.consultationFee} consultation</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-row md:flex-col gap-3">
+                            <Link
+                                to={`/doctor/${doctor._id}`}
+                                className="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-all text-center"
+                            >
+                                View Profile
+                            </Link>
+                            <Link
+                                to={`/p/book-appointment/${doctor._id}`}
+                                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium transition-all text-center shadow-md"
+                            >
+                                Book Appointment
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     if (loading) {
         return <Loader size="lg" color="green" fullScreen text="Loading doctors..." />;
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 text-gray-800 dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353] dark:text-gray-300">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#0f1a24] dark:to-[#0a1520]">
             {/* Hero Banner */}
-            <div className="bg-gradient-to-r from-green-600 to-teal-700 dark:from-[#0a2a2a] dark:to-[#063333] py-12">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-white text-center">Find Your Perfect Doctor</h1>
-                    <p className="text-green-100 text-center mt-2">Browse through our list of certified and experienced doctors</p>
+            <div className="relative bg-gradient-to-r from-green-600 via-emerald-600 to-teal-700 dark:from-[#0a2a2a] dark:via-[#0a3535] dark:to-[#063333] overflow-hidden">
+                <div className="absolute inset-0 bg-black/10"></div>
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+                    <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-white text-sm mb-4">
+                        <Shield className="w-4 h-4" />
+                        <span>Trusted by 50,000+ Patients</span>
+                    </div>
+                    <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">Find Your Perfect Doctor</h1>
+                    <p className="text-green-100 text-lg max-w-2xl mx-auto">
+                        Browse through our list of certified and experienced medical professionals
+                    </p>
                 </div>
+                {/* Decorative Shapes */}
+                {/* <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-gray-50 dark:from-[#0f1a24] to-transparent"></div> */}
             </div>
 
             {/* Search and Filter Section */}
-            <div className="sticky top-0 z-10 bg-gray-100 dark:bg-transparent py-4 border-b border-gray-200 dark:border-gray-700/50 backdrop-blur-sm bg-opacity-95">
+            <div className="sticky top-0 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md py-4 border-b border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex flex-col lg:flex-row gap-4">
                         {/* Search Bar */}
                         <div className="flex-1 relative">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -114,245 +391,116 @@ export default function DoctorsListingPage() {
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search by doctor name, specialty, or city..."
-                                className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="Search by doctor name, specialty, city, or qualification..."
+                                className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                             />
                         </div>
 
-                        {/* Sort Dropdown - Desktop */}
-                        <div className="hidden md:block relative">
-                            <select
-                                value={sortBy}
-                                onChange={(e) => handleSortChange(e.target.value)}
-                                className="px-5 py-3 pr-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
-                            >
-                                <option value="rating">Sort by Rating</option>
-                                <option value="experience">Sort by Experience</option>
-                                <option value="fees">Sort by Fees (Low to High)</option>
-                            </select>
-                            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        </div>
-
-                        {/* Specialty Filter Dropdown - Desktop */}
-                        <div className="hidden md:block relative">
+                        {/* Filter Controls */}
+                        <div className="flex gap-3">
+                            {/* Specialty Filter */}
                             <select
                                 value={selectedSpecialty}
                                 onChange={(e) => setSelectedSpecialty(e.target.value)}
-                                className="px-5 py-3 pr-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
+                                className="px-5 py-3.5 pr-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
                             >
                                 {specialties.map((specialty, idx) => (
                                     <option key={idx} value={specialty}>{specialty}</option>
                                 ))}
                             </select>
-                            <Stethoscope className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        </div>
 
-                        {/* Filter Button - Mobile */}
-                        <button
-                            onClick={() => setIsFilterOpen(!isFilterOpen)}
-                            className="md:hidden flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                        >
-                            <Filter className="w-5 h-5" />
-                            Filters
-                            {(selectedSpecialty !== "All Specialties" || sortBy !== "rating") && (
-                                <span className="ml-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
-                                    Active
-                                </span>
-                            )}
-                        </button>
-
-                        {/* Clear Filters Button */}
-                        {(searchQuery || selectedSpecialty !== "All Specialties" || sortBy !== "rating") && (
-                            <button
-                                onClick={clearFilters}
-                                className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            {/* Sort Dropdown */}
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="px-5 py-3.5 pr-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer"
                             >
-                                <X className="w-4 h-4" />
-                                Clear Filters
-                            </button>
-                        )}
-                    </div>
+                                <option value="rating">Sort by Rating</option>
+                                <option value="experience">Sort by Experience</option>
+                                <option value="fees">Sort by Fees (Low to High)</option>
+                            </select>
 
-                    {/* Mobile Filter Dropdown */}
-                    {isFilterOpen && (
-                        <div className="md:hidden mt-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
-                            {/* Sort Options */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Sort By
-                                </label>
-                                <div className="space-y-2">
-                                    {[
-                                        { value: "rating", label: "Rating (High to Low)" },
-                                        { value: "experience", label: "Experience (High to Low)" },
-                                        { value: "fees", label: "Fees (Low to High)" }
-                                    ].map(option => (
-                                        <button
-                                            key={option.value}
-                                            onClick={() => {
-                                                handleSortChange(option.value);
-                                                setIsFilterOpen(false);
-                                            }}
-                                            className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${sortBy === option.value
-                                                    ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                                                    : "hover:bg-gray-50 dark:hover:bg-gray-700"
-                                                }`}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    ))}
-                                </div>
+                            {/* View Toggle */}
+                            <div className="flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <button
+                                    onClick={() => setViewMode("grid")}
+                                    className={`px-4 py-3.5 transition-colors ${viewMode === "grid" ? "bg-green-600 text-white" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => setViewMode("list")}
+                                    className={`px-4 py-3.5 transition-colors ${viewMode === "list" ? "bg-green-600 text-white" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                </button>
                             </div>
 
-                            {/* Specialty Options */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Specialty
-                                </label>
-                                <div className="space-y-2 max-h-48 overflow-y-auto">
-                                    {specialties.map((specialty, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => {
-                                                setSelectedSpecialty(specialty);
-                                                setIsFilterOpen(false);
-                                            }}
-                                            className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${selectedSpecialty === specialty
-                                                    ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                                                    : "hover:bg-gray-50 dark:hover:bg-gray-700"
-                                                }`}
-                                        >
-                                            {specialty}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            {/* Clear Filters */}
+                            {(searchQuery || selectedSpecialty !== "All Specialties" || sortBy !== "rating") && (
+                                <button
+                                    onClick={clearFilters}
+                                    className="flex items-center gap-2 px-5 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                    Clear
+                                </button>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
 
-            {/* Results Count */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-                <p className="text-gray-500 dark:text-gray-400">
-                    Found <span className="font-semibold text-gray-900 dark:text-white">{filteredDoctors.length}</span> doctors
-                    {selectedSpecialty !== "All Specialties" && ` in ${selectedSpecialty}`}
-                    {searchQuery && ` matching "${searchQuery}"`}
-                    {sortBy === "rating" && " sorted by rating"}
-                    {sortBy === "experience" && " sorted by experience"}
-                    {sortBy === "fees" && " sorted by fees"}
-                </p>
-            </div>
+            {/* Results Section */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
+                {/* Results Header */}
+                <div className="flex justify-between items-center mb-6">
+                    <p className="text-gray-500 dark:text-gray-400">
+                        Found <span className="font-semibold text-gray-900 dark:text-white">{filteredDoctors.length}</span> doctors
+                        {selectedSpecialty !== "All Specialties" && ` in ${selectedSpecialty}`}
+                    </p>
+                    <div className="hidden md:flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Showing top {filteredDoctors.length} results
+                        </span>
+                    </div>
+                </div>
 
-            {/* Doctors Grid */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-16">
+                {/* Doctors Grid/List */}
                 {filteredDoctors.length === 0 ? (
-                    <div className="text-center py-16">
-                        <div className="w-24 h-24 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                            <User className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                    <div className="text-center py-20">
+                        <div className="w-32 h-32 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                            <User className="w-16 h-16 text-gray-400 dark:text-gray-500" />
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No doctors found</h3>
-                        <p className="text-gray-500 dark:text-gray-400 mb-4">
-                            We couldn't find any doctors matching your criteria.
+                        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">No doctors found</h3>
+                        <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                            We couldn't find any doctors matching your criteria. Try adjusting your filters or search term.
                         </p>
                         <button
                             onClick={clearFilters}
-                            className="inline-flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-colors shadow-md"
                         >
-                            Clear Filters
+                            Clear All Filters
                         </button>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                ) : viewMode === "grid" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredDoctors.map((doctor) => (
-                            <div
-                                key={doctor._id}
-                                className="group bg-white dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1"
-                            >
-                                {/* Doctor Image */}
-                                <div className="relative h-48 overflow-hidden bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20">
-                                    <img
-                                        src={doctor.profilePhoto || `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff`}
-                                        alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                        onError={(e) => {
-                                            e.target.src = `https://ui-avatars.com/api/?name=${doctor.firstName}+${doctor.lastName}&background=10b981&color=fff`;
-                                        }}
-                                    />
-                                    {/* Verified Badge */}
-                                    {doctor.isVerified && (
-                                        <div className="absolute top-3 right-3 bg-green-600 text-white rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
-                                            <CheckCircle className="w-3 h-3" />
-                                            Verified
-                                        </div>
-                                    )}
-                                    {/* Rating Badge */}
-                                    {doctor.rating > 0 && (
-                                        <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-semibold flex items-center gap-1">
-                                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                                            <span className="text-gray-900 dark:text-white">{doctor.rating}</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Doctor Info */}
-                                <div className="p-5">
-                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">
-                                        Dr. {doctor.firstName} {doctor.lastName}
-                                    </h3>
-                                    <p className="text-green-600 dark:text-green-400 text-sm font-medium mb-3 flex items-center gap-1">
-                                        <Stethoscope className="w-3 h-3" />
-                                        {doctor.specialty || "General Physician"}
-                                    </p>
-
-                                    <div className="space-y-2 mb-4">
-                                        {doctor.yearsOfExperience > 0 && (
-                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                <Briefcase className="w-4 h-4" />
-                                                <span>{doctor.yearsOfExperience} years experience</span>
-                                            </div>
-                                        )}
-                                        {doctor.consultationFee > 0 && (
-                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                <DollarSign className="w-4 h-4" />
-                                                <span>₹{doctor.consultationFee} consultation fee</span>
-                                            </div>
-                                        )}
-                                        {doctor.clinicCity && (
-                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                <MapPin className="w-4 h-4" />
-                                                <span>{doctor.clinicCity}{doctor.clinicState ? `, ${doctor.clinicState}` : ''}</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-3">
-                                        <Link
-                                            to={`/doctor/${doctor._id}`}
-                                            className="flex-1 text-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg font-medium transition-colors text-sm"
-                                        >
-                                            View Profile
-                                        </Link>
-                                        <Link
-                                            to={`/p/book-appointment/${doctor._id}`}
-                                            className="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-1"
-                                        >
-                                            Book <ChevronRight className="w-3 h-3" />
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
+                            <DoctorGridCard key={doctor._id} doctor={doctor} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {filteredDoctors.map((doctor) => (
+                            <DoctorListCard key={doctor._id} doctor={doctor} />
                         ))}
                     </div>
                 )}
-            </div>
-
-            {/* Footer Note */}
-            <div className="bg-white dark:bg-gray-800/30 py-4 text-center border-t border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing {filteredDoctors.length} of {doctors.length} doctors
-                </p>
             </div>
         </div>
     );

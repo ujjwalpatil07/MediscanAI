@@ -1,3 +1,8 @@
+import dns from "node:dns";
+
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+dns.setDefaultResultOrder("ipv4first");
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -14,8 +19,10 @@ import aiRoutes from "./routes/ai.routes.js";
 import doctorRoutes from "./routes/doctor.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import chatRoutes from "./routes/chat.routes.js"; 
+import chatRoutes from "./routes/chat.routes.js";
 import blogRoutes from "./routes/blog.routes.js";
+
+import publicRoutes from "./routes/public.routes.js";
 
 import { connectDB } from "./config/initDB.js";
 import { corsOptions } from "./config/cors.js";
@@ -25,7 +32,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
@@ -58,7 +65,6 @@ app.get("/socket-status", (req, res) => {
   });
 });
 
-
 // ------------------- PATIENT ROUTES -----------------------
 app.use("/p/profile", patientProfileRoutes);
 app.use("/p/appointment", appointmentRoutes);
@@ -66,13 +72,13 @@ app.use("/p/prescription", prescriptionRoutes);
 app.use("/p/medical-record", medicalRecordRoutes);
 app.use("/ai", aiRoutes);
 
-
 app.use("/doctor", doctorRoutes);
 app.use("/auth", authRoutes);
 app.use("/upload", uploadRoutes);
-app.use("/chat", chatRoutes); 
+app.use("/chat", chatRoutes);
 app.use("/blogs", blogRoutes);
 
+app.use("/public", publicRoutes);
 
 // Health check route
 app.get("/", (req, res) => {

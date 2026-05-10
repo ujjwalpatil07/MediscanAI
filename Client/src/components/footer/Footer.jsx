@@ -15,7 +15,7 @@ export default function Footer() {
   const { theme, toggleTheme } = useThemeContext();
 
   return (
-    <footer className="bg-gray-100 text-gray-800 dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353] dark:text-gray-300 pt-10">
+    <footer className="bg-gray-100 text-gray-800 dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353] dark:text-gray-300 pt-10 z-20">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
 
         {/* Logo & Description */}

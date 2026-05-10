@@ -30,15 +30,12 @@ import { getBlogById } from "../../Client/src/services/doctor.service.js";
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(authMiddleware);
-
 // ==================== DASHBOARD ====================
-router.get("/dashboard", wrapAsync(getDashboardData));
+router.get("/dashboard",authMiddleware, wrapAsync(getDashboardData));
 
 // ==================== APPOINTMENTS ====================
-router.get("/appointments", wrapAsync(getAppointments));
-router.get("/appointments/:appointmentId", wrapAsync(getAppointmentById));
+router.get("/appointments",authMiddleware, wrapAsync(getAppointments));
+router.get("/appointments/:appointmentId",authMiddleware, wrapAsync(getAppointmentById));
 router.put(
   "/appointments/:appointmentId/status",
   wrapAsync(updateAppointmentStatus),
@@ -46,37 +43,37 @@ router.put(
 
 // ==================== PATIENTS ====================
 // ✅ SPECIFIC routes MUST come before "/:id"
-router.get("/patients", wrapAsync(getDoctorPatients));
-router.get("/patients/:patientId", wrapAsync(getPatientById));
+router.get("/patients",authMiddleware, wrapAsync(getDoctorPatients));
+router.get("/patients/:patientId",authMiddleware, wrapAsync(getPatientById));
 
 // ==================== PRESCRIPTIONS ====================
-router.get("/prescriptions", wrapAsync(getPrescriptions));
-router.post("/prescriptions", wrapAsync(createPrescription));
+router.get("/prescriptions",authMiddleware, wrapAsync(getPrescriptions));
+router.post("/prescriptions",authMiddleware, wrapAsync(createPrescription));
 
 // ==================== BLOGS ====================
-router.get("/blogs", wrapAsync(getBlogs));
-router.get("/blogs/:blogId", wrapAsync(getBlogById));
-router.post("/blogs", wrapAsync(createBlog));
-router.put("/blogs/:blogId", wrapAsync(updateBlog));
-router.delete("/blogs/:blogId", wrapAsync(deleteBlog));
+router.get("/blogs",authMiddleware, wrapAsync(getBlogs));
+router.get("/blogs/:blogId",authMiddleware, wrapAsync(getBlogById));
+router.post("/blogs",authMiddleware, wrapAsync(createBlog));
+router.put("/blogs/:blogId",authMiddleware, wrapAsync(updateBlog));
+router.delete("/blogs/:blogId",authMiddleware, wrapAsync(deleteBlog));
 
 // ==================== SETTINGS ====================
-router.get("/settings", wrapAsync(getSettings));
-router.put("/settings", wrapAsync(updateSettings));
+router.get("/settings",authMiddleware, wrapAsync(getSettings));
+router.put("/settings",authMiddleware, wrapAsync(updateSettings));
 
 // ==================== PAYMENTS ====================
-router.get("/payments/dashboard", wrapAsync(getPaymentDashboard));
-router.get("/payments/transactions", wrapAsync(getTransactions));
-router.post("/payments/bank-account", wrapAsync(addBankAccount));
-router.post("/payments/withdraw", wrapAsync(requestWithdrawal));
+router.get("/payments/dashboard",authMiddleware, wrapAsync(getPaymentDashboard));
+router.get("/payments/transactions",authMiddleware, wrapAsync(getTransactions));
+router.post("/payments/bank-account",authMiddleware, wrapAsync(addBankAccount));
+router.post("/payments/withdraw",authMiddleware, wrapAsync(requestWithdrawal));
 
 // ==================== NOTIFICATIONS ====================
-router.get("/notifications", wrapAsync(getNotifications));
+router.get("/notifications",authMiddleware, wrapAsync(getNotifications));
 router.put(
   "/notifications/:notificationId/read",
   wrapAsync(markNotificationRead),
 );
-router.put("/notifications/read-all", wrapAsync(markAllNotificationsRead));
+router.put("/notifications/read-all",authMiddleware, wrapAsync(markAllNotificationsRead));
 
 // ==================== DOCTOR PROFILE (PUBLIC) ====================
 router.get("/", wrapAsync(getAllDoctors));

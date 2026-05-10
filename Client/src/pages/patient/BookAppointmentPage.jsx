@@ -125,10 +125,12 @@ export default function BookAppointmentPage() {
 
                 if (isMounted && response.data.success) {
                     // Update to handle both available and booked slots
+                    // Update the slot mapping in loadTimeSlots
                     const slots = response.data.slots.map(slot => ({
                         startTime: slot.startTime,
                         endTime: slot.endTime,
                         displayTime: format(parseISO(slot.startTime), 'h:mm a'),
+                        endDisplayTime: format(parseISO(slot.endTime), 'h:mm a'),
                         isBooked: slot.isBooked || false
                     }));
                     setTimeSlots(slots);
@@ -282,6 +284,8 @@ export default function BookAppointmentPage() {
                 location: locationData,
                 ...(appointmentType === 'video' && { meetingLink: generateMeetingLink() })
             };
+
+            
 
             console.log('Booking data being sent:', appointmentData); // For debugging
 
@@ -830,6 +834,7 @@ export default function BookAppointmentPage() {
                 onConfirm={confirmBooking}
                 title="Confirm Appointment"
                 loading={bookingLoading}
+                appointmentType={appointmentType}
             >
                 <div className="space-y-3">
                     <p className="text-gray-600">Please confirm your appointment details:</p>
