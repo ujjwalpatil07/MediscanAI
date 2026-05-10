@@ -168,8 +168,6 @@ const FeatureCard = ({ feature, index }) => {
 // Main Component
 export default function AboutUs() {
   const [stats, setStats] = useState(null);
-  const [doctors, setDoctors] = useState([]);
-  const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
