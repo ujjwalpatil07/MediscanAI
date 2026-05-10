@@ -52,6 +52,8 @@ export default function Routers() {
       <Route path="/home" element={<PatientLayout><HomePage /></PatientLayout>} />
       <Route path="/about" element={<PatientLayout><AboutUs /></PatientLayout>} />
       <Route path="/contact" element={<PatientLayout><ContactUs /></PatientLayout>} />
+
+      {/* future functionality */}
       <Route path="/blogs" element={<PatientLayout><Blogs /></PatientLayout>} />
       <Route path="/blogs/:blogId" element={<PatientLayout><BlogView /></PatientLayout>} />
 
@@ -69,10 +71,13 @@ export default function Routers() {
       <Route path="/p/dashboard" element={<PatientLayout><PatientDashboard /></PatientLayout>} />
       <Route path="/p/book-appointment/:doctor_id" element={<PatientLayout><BookAppointmentPage /></PatientLayout>} />
       <Route path="/p/my-appointments" element={<PatientLayout><MyAppointmentsPage /></PatientLayout>} />
+
       <Route path="/p/symptom-checker" element={<PatientLayout><SymptomChecker/></PatientLayout>} />
+
       <Route path="/p/prescriptions" element={<PatientLayout><PrescriptionsPage/></PatientLayout>} />
       <Route path="/p/medical-records" element={<PatientLayout><MedicalRecordsPage/></PatientLayout>} />
       <Route path="/p/profile" element={<PatientLayout><PatientProfile/></PatientLayout>} />
+      
       <Route path="/p/messages" element={<PatientLayout><PatientMessages /></PatientLayout>} />
 
       {/* ------------------------------------------------------------Doctor Routes----------------------------------------------------- */}

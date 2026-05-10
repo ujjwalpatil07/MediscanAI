@@ -165,7 +165,7 @@ export default function ContactUs() {
       </section>
 
       {/* Contact Info Cards */}
-      <section className="py-12 -mt-10">
+      <section className="pt-12 -mt-5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {contactInfo.map((info, index) => {
@@ -173,7 +173,7 @@ export default function ContactUs() {
               return (
                 <div
                   key={index}
-                  className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-all"
+                  className="bg-gray-100 dark:bg-neutral-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-all"
                 >
                   <div className={`w-12 h-12 rounded-xl ${info.bg} flex items-center justify-center mb-4`}>
                     <Icon className={`w-6 h-6 ${info.color}`} />
@@ -202,7 +202,7 @@ export default function ContactUs() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Contact Form */}
             <div className="lg:col-span-2">
-              <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6 sm:p-8">
+              <div className="bg-gray-100 dark:bg-neutral-800 rounded-2xl shadow-sm p-6 sm:p-8">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                   Send us a Message
                 </h2>
@@ -360,7 +360,7 @@ export default function ContactUs() {
 
             {/* FAQ Section */}
             <div>
-              <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6 sticky top-24">
+              <div className="bg-gray-50 dark:bg-neutral-800 rounded-2xl shadow-sm p-6 sticky top-24">
                 <div className="flex items-center gap-2 mb-6">
                   <HelpCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -372,7 +372,7 @@ export default function ContactUs() {
                   {faqItems.map((item, index) => (
                     <div
                       key={index}
-                      className="border border-gray-100 dark:border-neutral-700 rounded-lg overflow-hidden"
+                      className="border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden"
                     >
                       <button
                         onClick={() =>

@@ -78,3 +78,51 @@ export const handleMulterError = (err, req, res, next) => {
   }
   next();
 };
+
+const medicalRecordStorage = multer.memoryStorage();
+
+export const uploadMedicalRecord = multer({
+  storage: medicalRecordStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(
+        new Error("Invalid file type. Only PDF, JPEG, PNG are allowed."),
+        false,
+      );
+    }
+  },
+}).single("file");
+
+export const handleMedicalRecordMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "FILE_TOO_LARGE") {
+      return res.status(400).json({
+        success: false,
+        message: "File size too large. Maximum size is 10MB.",
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+  if (err) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+  next();
+};
