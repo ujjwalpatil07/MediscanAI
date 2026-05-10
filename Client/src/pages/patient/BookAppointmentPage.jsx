@@ -129,6 +129,7 @@ export default function BookAppointmentPage() {
                         startTime: slot.startTime,
                         endTime: slot.endTime,
                         displayTime: format(parseISO(slot.startTime), 'h:mm a'),
+                        endDisplayTime: format(parseISO(slot.endTime), 'h:mm a'),
                         isBooked: slot.isBooked || false
                     }));
                     setTimeSlots(slots);
@@ -280,9 +281,7 @@ export default function BookAppointmentPage() {
                 location: locationData,
                 ...(appointmentType === 'video' && { meetingLink: generateMeetingLink() })
             };
-
-            console.log('Booking data being sent:', appointmentData);
-
+          
             const response = await bookAppointmentService(appointmentData);
 
             if (response.data.success) {
@@ -825,6 +824,7 @@ export default function BookAppointmentPage() {
                 onConfirm={confirmBooking}
                 title="Confirm Appointment"
                 loading={bookingLoading}
+                appointmentType={appointmentType}
             >
                 <div className="space-y-3">
                     <p className="text-neutral-600 dark:text-neutral-400">Please confirm your appointment details:</p>

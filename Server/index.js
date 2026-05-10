@@ -1,6 +1,5 @@
 import dns from "node:dns";
 
-// 🔥 MUST BE FIRST
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 dns.setDefaultResultOrder("ipv4first");
 
@@ -20,7 +19,7 @@ import aiRoutes from "./routes/ai.routes.js";
 import doctorRoutes from "./routes/doctor.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
-import chatRoutes from "./routes/chat.routes.js"; 
+import chatRoutes from "./routes/chat.routes.js";
 import blogRoutes from "./routes/blog.routes.js";
 
 import publicRoutes from "./routes/public.routes.js";
@@ -66,7 +65,6 @@ app.get("/socket-status", (req, res) => {
   });
 });
 
-
 // ------------------- PATIENT ROUTES -----------------------
 app.use("/p/profile", patientProfileRoutes);
 app.use("/p/appointment", appointmentRoutes);
@@ -77,11 +75,10 @@ app.use("/ai", aiRoutes);
 app.use("/doctor", doctorRoutes);
 app.use("/auth", authRoutes);
 app.use("/upload", uploadRoutes);
-app.use("/chat", chatRoutes); 
+app.use("/chat", chatRoutes);
 app.use("/blogs", blogRoutes);
 
 app.use("/public", publicRoutes);
-
 
 // Health check route
 app.get("/", (req, res) => {

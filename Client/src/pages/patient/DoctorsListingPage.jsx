@@ -46,8 +46,8 @@ export default function DoctorsListingPage() {
 
             const response = await getAllDoctorsService(params);
 
-            if (response.data.success) {
-                setDoctors(response.data.data);
+            if (response?.data?.success) {
+                setDoctors(response?.data?.data);
                 const uniqueSpecialties = ["All Specialties", ...new Set(
                     response.data.data.map(doc => doc.specialty).filter(Boolean)
                 )];

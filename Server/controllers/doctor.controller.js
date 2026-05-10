@@ -31,6 +31,13 @@ export const getAllDoctors = async (req, res) => {
 
   const doctors = await query;
 
+  if(!doctors) {
+    return res.status(httpStatus.NOT_FOUND).json({
+      success: false, 
+      message: "Doctors not found"
+    })
+  }
+
   return res.status(httpStatus.OK).json({
     success: true,
     count: doctors.length,
@@ -280,7 +287,7 @@ export const getAppointments = async (req, res) => {
       .sort(sortOption)
       .skip(skip)
       .limit(parseInt(limit))
-      .populate("patientId", "firstName lastName email mobile gender dob")
+      .populate("patientId")
       .lean(),
 
     Appointment.countDocuments(query),
@@ -314,7 +321,7 @@ export const getAppointments = async (req, res) => {
         _id: apt._id,
         patient: apt.patientId,
         appointmentDate: apt.appointmentDate,
-        appointmentTime: apt.appointmentTime,
+        appointmentTime: apt.startTime,
         appointmentType: apt.appointmentType,
         status: apt.status,
         paymentStatus: apt.paymentStatus,
@@ -563,6 +570,7 @@ export const getPatientById = async (req, res) => {
   const doctorId = req.user.id;
   const { patientId } = req.params;
 
+  // Find the patient
   const patient = await Patient.findById(patientId).select("-password").lean();
 
   if (!patient) {
@@ -572,13 +580,28 @@ export const getPatientById = async (req, res) => {
     });
   }
 
+  // Check if this patient has any appointments with this doctor
+  const hasAccess = await Appointment.exists({
+    doctorId,
+    patientId,
+  });
+
+  if (!hasAccess) {
+    return res.status(403).json({
+      success: false,
+      message: "You don't have access to this patient's records",
+    });
+  }
+
   // Get all appointments with this doctor
   const appointments = await Appointment.find({
     doctorId,
     patientId,
   })
     .sort({ appointmentDate: -1 })
-    .populate("prescription")
+    .select(
+      "appointmentDate appointmentTime appointmentType status paymentStatus symptoms consultationFee",
+    )
     .lean();
 
   // Get prescriptions
@@ -587,16 +610,7 @@ export const getPatientById = async (req, res) => {
     patientId,
   })
     .sort({ createdAt: -1 })
-    .lean();
-
-  // Get messages
-  const messages = await Message.find({
-    $or: [
-      { senderId: patientId, receiverId: doctorId },
-      { senderId: doctorId, receiverId: patientId },
-    ],
-  })
-    .sort({ createdAt: 1 })
+    .select("date medicines notes doctorSnapshot appointmentType")
     .lean();
 
   res.status(200).json({
@@ -605,7 +619,6 @@ export const getPatientById = async (req, res) => {
       patient,
       appointments,
       prescriptions,
-      messages,
       stats: {
         totalAppointments: appointments.length,
         completedAppointments: appointments.filter(

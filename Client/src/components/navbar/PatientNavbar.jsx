@@ -30,7 +30,7 @@ import {
   Bell,
 } from "lucide-react";
 
-import { useState, useContext } from "react";
+import React, { useState, useContext } from "react";
 import PropTypes from "prop-types";
 import Logo from "../logo/Logo";
 import CustomMenu from "../common/CustomMenu";
@@ -334,15 +334,16 @@ export default function Navbar() {
 
         {/* Mobile User Info */}
         {loginPatient && (
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3 bg-green-50/50 dark:bg-green-900/10">
             <Avatar
               src={loginPatient?.profilePhoto}
-              sx={{ width: 40, height: 40 }}
+              sx={{ width: 44, height: 44 }}
+              className="ring-2 ring-green-400"
             >
               {loginPatient?.firstName?.[0]}
             </Avatar>
             <div>
-              <p className="font-medium text-gray-900 dark:text-white text-sm">
+              <p className="font-semibold text-gray-900 dark:text-white text-sm">
                 {loginPatient?.firstName} {loginPatient?.lastName}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -352,7 +353,7 @@ export default function Navbar() {
           </div>
         )}
 
-        <List className="flex-1">
+        <List className="flex-1 py-2">
           {links.map((link) => (
             <ListItem key={link.title} disablePadding>
               <ListItemButton
@@ -360,9 +361,41 @@ export default function Navbar() {
                 to={link.path}
                 onClick={() => setDrawerOpen(false)}
                 selected={isActive(link.path)}
+                sx={{
+                  mx: 1,
+                  borderRadius: 2,
+                  mb: 0.5,
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    color: '#10b981',
+                    '&:hover': {
+                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    },
+                  },
+                }}
               >
-                <ListItemIcon>{link.icon}</ListItemIcon>
-                <ListItemText primary={link.title} />
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isActive(link.path)
+                      ? "bg-green-100 dark:bg-green-900/30"
+                      : "bg-gray-100 dark:bg-gray-800"
+                    }`}>
+                    {React.cloneElement(link.icon, {
+                      size: 18,
+                      className: isActive(link.path)
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-gray-500 dark:text-gray-400"
+                    })}
+                  </div>
+                </ListItemIcon>
+                <ListItemText
+                  primary={link.title}
+                  primaryTypographyProps={{
+                    className: `text-sm font-medium ${isActive(link.path)
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-gray-700 dark:text-gray-200"
+                      }`,
+                  }}
+                />
               </ListItemButton>
             </ListItem>
           ))}
@@ -375,19 +408,47 @@ export default function Navbar() {
                 to="/p/messages"
                 onClick={() => setDrawerOpen(false)}
                 selected={isActive("/p/messages")}
+                sx={{
+                  mx: 1,
+                  borderRadius: 2,
+                  mb: 0.5,
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    color: '#10b981',
+                  },
+                }}
               >
-                <ListItemIcon>
-                  <Badge badgeContent={unreadMessages} color="error">
-                    <MessageCircle size={18} />
-                  </Badge>
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isActive("/p/messages")
+                      ? "bg-rose-100 dark:bg-rose-900/30"
+                      : "bg-gray-100 dark:bg-gray-800"
+                    }`}>
+                    <Badge badgeContent={unreadMessages} color="error">
+                      <MessageCircle
+                        size={18}
+                        className={isActive("/p/messages")
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-gray-500 dark:text-gray-400"
+                        }
+                      />
+                    </Badge>
+                  </div>
                 </ListItemIcon>
-                <ListItemText primary="Messages" />
+                <ListItemText
+                  primary="Messages"
+                  primaryTypographyProps={{
+                    className: `text-sm font-medium ${isActive("/p/messages")
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-gray-700 dark:text-gray-200"
+                      }`,
+                  }}
+                />
               </ListItemButton>
             </ListItem>
           )}
         </List>
 
-        <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
           {loginPatient ? (
             <ProfileMenuItems
               onClose={() => setDrawerOpen(false)}
@@ -402,6 +463,7 @@ export default function Navbar() {
                 variant="outlined"
                 onClick={() => setDrawerOpen(false)}
                 fullWidth
+                className="!border-green-500 !text-green-600 dark:!text-green-400 !rounded-xl"
               >
                 Login
               </Button>
@@ -411,6 +473,7 @@ export default function Navbar() {
                 variant="contained"
                 onClick={() => setDrawerOpen(false)}
                 fullWidth
+                className="!bg-green-600 hover:!bg-green-700 !rounded-xl !shadow-lg !shadow-green-500/20"
               >
                 Register
               </Button>

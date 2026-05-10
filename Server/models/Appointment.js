@@ -39,7 +39,7 @@ const appointmentSchema = new mongoose.Schema(
     // 🔹 Type & Status
     appointmentType: {
       type: String,
-      enum: ["video", "clinic"],
+      enum: ["online", "clinic"],
       default: "clinic",
     },
 

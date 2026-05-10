@@ -15,6 +15,10 @@ export const getMyPatients = (params) => {
   return api.get("/doctor/patients", { params });
 };
 
+export const getDoctorPatientById = (patientId) => {
+  return api.get(`/doctor/patients/${patientId}`);
+};
+
 // ==================== APPOINTMENTS ====================
 export const getDoctorAppointments = (params = {}) => {
   return api.get("/doctor/appointments", { params });
