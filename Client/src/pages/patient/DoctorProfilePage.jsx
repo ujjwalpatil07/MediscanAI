@@ -125,7 +125,7 @@ export default function DoctorProfilePage() {
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col md:flex-row gap-6 items-center">
                         {/* Doctor Avatar */}
-                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white dark:border-neutral-700 shadow-lg flex-shrink-0">
+                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white/80 shadow-lg flex-shrink-0">
                             {doctor?.profilePhoto ? (
                                 <img
                                     src={doctor.profilePhoto}
