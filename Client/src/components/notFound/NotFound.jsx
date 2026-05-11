@@ -46,7 +46,7 @@ export default function NotFoundPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gradient-to-r dark:from-[#182c43] dark:to-[#175353] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-900 px-4">
       <div className="w-full max-w-6xl">
         <div className="md:flex items-center">
 
@@ -54,16 +54,16 @@ export default function NotFoundPage() {
           <div className="md:w-1/2 p-6">
             <Logo />
 
-            <h1 className="text-7xl font-bold text-green-600 dark:text-green-400 mt-6">
+            <h1 className="text-7xl font-bold text-green-600 dark:text-green-500 mt-6">
               404
             </h1>
 
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mt-2">
+            <h2 className="text-2xl font-semibold text-neutral-800 dark:text-white mt-2">
               Oops! Page not found
             </h2>
 
-            <p className="text-gray-600 dark:text-gray-300 mt-3 mb-6">
-              The page you’re looking for doesn’t exist or may have been moved.
+            <p className="text-neutral-600 dark:text-neutral-400 mt-3 mb-6">
+              The page you're looking for doesn't exist or may have been moved.
               Try navigating using the options below.
             </p>
 
@@ -71,21 +71,21 @@ export default function NotFoundPage() {
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <button
                 onClick={() => navigate("/login")}
-                className="px-5 py-2 bg-green-600 text-white rounded-lg flex items-center justify-center hover:bg-green-700 transition"
+                className="px-5 py-2 bg-green-600 text-white rounded-lg flex items-center justify-center hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
               >
-                <LogIn className="mr-2" /> Be part of us now!
+                <LogIn className="mr-2 w-4 h-4" /> Be part of us now!
               </button>
 
               <button
                 onClick={() => navigate("/")}
-                className="px-5 py-2 border border-green-600 text-green-700 rounded-lg flex items-center justify-center hover:bg-green-50 dark:hover:bg-neutral-800 transition"
+                className="px-5 py-2 border border-green-600 text-green-700 dark:text-green-400 rounded-lg flex items-center justify-center hover:bg-green-50 dark:hover:bg-neutral-800 transition-all duration-200"
               >
-                <Earth className="mr-2" /> Explore us
+                <Earth className="mr-2 w-4 h-4" /> Explore us
               </button>
             </div>
 
             {/* Search */}
-            <div className="mb-2 font-medium text-green-700 dark:text-green-300 flex items-center">
+            <div className="mb-2 font-medium text-green-700 dark:text-green-400 flex items-center">
               <FaSearch className="mr-2" /> Search pages
             </div>
 
@@ -93,17 +93,17 @@ export default function NotFoundPage() {
               <input
                 type="text"
                 placeholder="Search features..."
-                className="w-full p-2 pl-9 pr-8 border rounded-lg bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-green-400"
+                className="w-full p-2 pl-9 pr-8 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
 
-              <FaSearch className="absolute left-3 top-3 text-gray-400" />
+              <FaSearch className="absolute left-3 top-3 text-neutral-400 dark:text-neutral-500" />
 
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-3 text-gray-400"
+                  className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
                 >
                   <FaTimes />
                 </button>
@@ -117,9 +117,9 @@ export default function NotFoundPage() {
                   <button
                     key={item.id}
                     onClick={() => navigate(item.path)}
-                    className={`px-3 py-2 border text-sm rounded-lg flex items-center transition ${isCurrentPath(item.path)
-                        ? "bg-green-100 border-green-500 text-green-700"
-                        : "bg-white dark:bg-neutral-900 border-gray-300 text-green-600 hover:bg-green-50"
+                    className={`px-3 py-2 border text-sm rounded-lg flex items-center transition-all duration-200 ${isCurrentPath(item.path)
+                        ? "bg-green-100 dark:bg-green-900/30 border-green-500 dark:border-green-600 text-green-700 dark:text-green-400"
+                        : "bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-neutral-700 hover:border-green-400 dark:hover:border-green-600"
                       }`}
                   >
                     {item.icon}
@@ -127,7 +127,7 @@ export default function NotFoundPage() {
                   </button>
                 ))
               ) : (
-                <div className="text-gray-500 py-3 w-full text-center">
+                <div className="text-neutral-500 dark:text-neutral-400 py-3 w-full text-center">
                   No results found
                 </div>
               )}
