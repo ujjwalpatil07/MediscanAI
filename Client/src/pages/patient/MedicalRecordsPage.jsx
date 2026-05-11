@@ -23,6 +23,7 @@ import {
 import { formatDate } from '../../utils/dateUtils';
 import { deleteMedicalRecord, getMyMedicalRecords, updateMedicalRecord, uploadMedicalRecord } from '../../services/medicalRecord.service';
 import toast from 'react-hot-toast';
+import MedicalBackground from '../../components/common/MedicalBackground';
 
 export default function MedicalRecords() {
     const [records, setRecords] = useState([]);
@@ -267,7 +268,7 @@ export default function MedicalRecords() {
 
     return (
         <div className="relative min-h-screen bg-neutral-50 dark:bg-neutral-900">
-            
+            <MedicalBackground/>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* Header */}

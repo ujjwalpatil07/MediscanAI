@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import AuthContext from "../../context/AuthContext";
 import { getMyPrescriptions } from "../../services/prescription.service";
+import MedicalBackground from "../../components/common/MedicalBackground";
 
 export default function PrescriptionsPage() {
     const { loginUser } = useContext(AuthContext);
@@ -225,7 +226,7 @@ export default function PrescriptionsPage() {
 
     return (
         <div className="relative min-h-screen mb-8">
-
+            <MedicalBackground />
             {/* Animated Header */}
             <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-900 dark:via-teal-900 dark:to-cyan-900">
                 <div className="absolute inset-0 bg-black/10"></div>

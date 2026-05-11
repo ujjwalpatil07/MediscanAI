@@ -27,6 +27,7 @@ import {
     getAppointmentByIdService
 } from "../../services/appointment.service";
 import toast from "react-hot-toast";
+import MedicalBackground from "../../components/common/MedicalBackground";
 
 const statusConfig = {
     upcoming: {
@@ -280,7 +281,8 @@ export default function MyAppointmentsPage() {
     );
 
     return (
-        <div className="min-h-screen mb-5">
+        <div className="relative min-h-screen mb-5">
+            <MedicalBackground/>
             {/* Animated Header */}
             <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-900 dark:via-teal-900 dark:to-cyan-900">
                 <div className="absolute inset-0 bg-black/10"></div>

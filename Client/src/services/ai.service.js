@@ -8,24 +8,23 @@ export const aiService = {
     return response.data;
   },
 
-  // Analyze symptoms
   analyzeSymptoms: async (symptoms) => {
-    const response = await api.post(`/ai/analyze-symptoms`, {
-      symptoms,
-    });
-    return response.data;
+    try {
+      const response = await api.post("/ai/analyze-symptoms", { symptoms });
+      console.log("Raw API response:", response.data);
+      // Return the entire response data
+      return response.data;
+    } catch (error) {
+      console.error("Analysis error:", error);
+      throw error;
+    }
   },
 
-  streamSymptomAnalysis: async (symptoms, onChunk, onComplete, onError) => {
+  // Update streamSymptomAnalysis in ai.service.js
+  streamSymptomAnalysis: async (symptoms, onData, onComplete, onError) => {
     const token = localStorage.getItem("token");
     const API_BASE_URL =
       import.meta.env?.VITE_API_URL || "http://localhost:9001";
-
-    console.log(
-      "🚀 Starting stream request to:",
-      `${API_BASE_URL}/ai/stream-analyze`,
-    );
-    console.log("📝 Symptoms:", symptoms);
 
     try {
       const response = await fetch(`${API_BASE_URL}/ai/stream-analyze`, {
@@ -37,12 +36,6 @@ export const aiService = {
         body: JSON.stringify({ symptoms }),
       });
 
-      console.log("📡 Response status:", response.status);
-      console.log(
-        "📡 Response headers:",
-        Object.fromEntries(response.headers.entries()),
-      );
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -50,64 +43,34 @@ export const aiService = {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let chunkCount = 0;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          console.log("✅ Stream completed, total chunks:", chunkCount);
           onComplete();
           break;
         }
 
-        chunkCount++;
-        const decodedChunk = decoder.decode(value, { stream: true });
-        console.log(`📦 Chunk ${chunkCount} received:`, decodedChunk);
-
-        buffer += decodedChunk;
+        buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          console.log("📄 Processing line:", line);
-
           if (line.trim().startsWith("data: ")) {
             try {
               const jsonStr = line.slice(6).trim();
-              console.log("🔍 JSON string:", jsonStr);
-
               if (jsonStr) {
                 const data = JSON.parse(jsonStr);
-                console.log("✅ Parsed data:", data);
-
-                if (data.type === "chunk") {
-                  console.log("💬 Calling onChunk with:", data.chunk);
-                  onChunk(data.chunk);
-                } else if (data.type === "meta") {
-                  console.log("ℹ️ Meta data:", data);
-                  if (data.status === "done") {
-                    onComplete();
-                  }
-                } else if (data.type === "error") {
-                  console.log("❌ Error from server:", data.message);
-                  onError(data.message);
-                }
+                onData(data);
               }
             } catch (e) {
-              console.warn("⚠️ Failed to parse JSON:", line, e.message);
-              // If it's not JSON, send as is
-              if (line.trim() && !line.includes("data: ")) {
-                onChunk(line);
-              }
+              console.warn("Failed to parse SSE data:", line);
             }
-          } else if (line.trim() && !line.includes("data: ")) {
-            console.log("📝 Non-SSE line:", line);
-            onChunk(line);
           }
         }
       }
     } catch (error) {
-      console.error("❌ Stream error:", error);
+      console.error("Stream error:", error);
       onError(error.message);
     }
   },
@@ -121,6 +84,7 @@ export const aiService = {
     const response = await api.post(`/ai/analyze-wound`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+
     return response.data;
   },
 
