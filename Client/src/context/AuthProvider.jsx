@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AuthContext from "./AuthContext";
 import { fetchCurrentUser } from "../services/user.service";
 import { useSnackbar } from "notistack";
+import { useNavigate } from "react-router-dom";
 
 export const AuthProvider = ({ children }) => {
 

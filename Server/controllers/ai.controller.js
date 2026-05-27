@@ -1,5 +1,4 @@
-// Server/controllers/ai.controller.js
-import axios from "axios";
+import axios from "axios"
 import FormData from "form-data";
 import AIAnalysis from "../models/AIAnalysis.js";
 
