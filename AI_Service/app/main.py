@@ -13,7 +13,7 @@ app = FastAPI(
 # Ideally configure allowed origins via env var; fallback to common dev urls
 FRONTEND_ORIGINS = os.getenv(
     "FRONTEND_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000,https://mediscan-ai-rose.vercel.app"
 )
 origins = [o.strip() for o in FRONTEND_ORIGINS.split(",") if o.strip()]
 
