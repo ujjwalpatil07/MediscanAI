@@ -27,7 +27,7 @@ import {
   PhoneCall,
   Loader2
 } from "lucide-react";
-import landingHeroImg from "../../../Assets/landingHeroImg.png";
+import landingHeroImg from "../../assets/landingHeroImg.png";
 import FAQ from "../components/common/FAQ";
 import { getFeaturedDoctors, getLatestBlogs, getLandingStats } from "../services/public.service";
 import MedicalBackground from "../components/common/MedicalBackground";
@@ -313,13 +313,13 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen bg-white dark:bg-[#101010ed] text-gray-900 dark:text-gray-100">
-      
+
       <MedicalBackground />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30">
         <div className="absolute inset-0 bg-white/40 dark:bg-black/20"></div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">

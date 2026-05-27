@@ -14,7 +14,7 @@ import {
 import { useState, useMemo } from "react";
 import { useDebounce } from "use-debounce";
 import { filterByQuery } from "../../utils/searchUtils";
-import doctorPatientImage from "../../../../assets/doctor_patient.png";
+import doctorPatientImage from "../../../assets/doctor_patient.png";
 import Logo from "../logo/Logo";
 import { Earth, LogIn, LucideStethoscope, Phone, Users, UserSearch } from "lucide-react";
 

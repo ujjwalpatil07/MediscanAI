@@ -25,7 +25,7 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react";
-import homeHeroImg from "../../../Assets/heroImg.png";
+import homeHeroImg from "../../assets/heroImg.png";
 import FAQ from "../components/common/FAQ";
 import { getFeaturedDoctors, getLatestBlogs, getLandingStats } from "../services/public.service";
 import MedicalBackground from "../components/common/MedicalBackground";

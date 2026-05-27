@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
-import photo from "../../../../Assets/coverImg.png";
+import photo from "../../../assets/coverImg.png";
 
 export default function LoginCover() {
   const navigate = useNavigate();

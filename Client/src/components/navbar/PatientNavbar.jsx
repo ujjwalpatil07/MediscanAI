@@ -87,7 +87,7 @@ const dummyNotifications = [
   },
 ];
 
-export default function Navbar() {
+export default function PatientNavbar() {
   const location = useLocation();
   const { toggleTheme } = useThemeContext();
   const { loginUser } = useContext(AuthContext);
