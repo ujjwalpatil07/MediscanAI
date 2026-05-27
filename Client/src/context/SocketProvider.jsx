@@ -41,7 +41,7 @@ export const SocketProvider = ({ children }) => {
     }
 
     // Create new socket connection
-    const socketInstance = io(import.meta.env.VITE_API_URL || "http://localhost:9001", {
+    const socketInstance = io(import.meta.env.VITE_API_URL || "https://mediscanai-uoiz.onrender.com", {
       auth: { token },
       transports: ["websocket", "polling"],
       reconnection: true,
@@ -207,7 +207,7 @@ export const SocketProvider = ({ children }) => {
   ]);
 
   return (
-    <SocketContext.Provider value={value}> 
+    <SocketContext.Provider value={value}>
       {children}
     </SocketContext.Provider>
   );
