@@ -26,7 +26,7 @@ import {
 } from "../controllers/doctor.controller.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import wrapAsync from "../utils/wrapAsync.js";
-import { getBlogById } from "../../Client/src/services/doctor.service.js";
+import { getPublicBlogById } from "../controllers/blog.controller.js";
 
 const router = express.Router();
 
@@ -52,7 +52,7 @@ router.post("/prescriptions",authMiddleware, wrapAsync(createPrescription));
 
 // ==================== BLOGS ====================
 router.get("/blogs",authMiddleware, wrapAsync(getBlogs));
-router.get("/blogs/:blogId",authMiddleware, wrapAsync(getBlogById));
+router.get("/blogs/:blogId",authMiddleware, wrapAsync(getPublicBlogById));
 router.post("/blogs",authMiddleware, wrapAsync(createBlog));
 router.put("/blogs/:blogId",authMiddleware, wrapAsync(updateBlog));
 router.delete("/blogs/:blogId",authMiddleware, wrapAsync(deleteBlog));
