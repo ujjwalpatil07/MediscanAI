@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import Footer from "../components/footer/Footer";
-import PatientNavbar from "../components/Navbar/PatientNavbar";
+import PatientNavbar from "../components/navbar/PatientNavbar";
 import { useContext, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
